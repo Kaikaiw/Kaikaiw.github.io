@@ -1,0 +1,26 @@
+{
+  "name": "aesct.github.io",
+  "version": "1.0.0",
+  "description": "Game",
+  "main": "server.js",
+  "dependencies": {
+    "socket.io": "^2.3.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aesct/aesct.github.io.git"
+  },
+  "keywords": [
+    "Game"
+  ],
+  "author": "Kai",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aesct/aesct.github.io/issues"
+  },
+  "homepage": "https://github.com/aesct/aesct.github.io#readme"
+}
