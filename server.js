@@ -80,7 +80,8 @@ function sendGameData(socket) {
       maxCol: shared.MAX_COL,
       unitWidth: shared.UNIT_WIDTH,
       unitHeight: shared.UNIT_HEIGHT,
-      boxes: shared.boxes
+      boxes: shared.boxes,
+      players: shared.players,
   });
 }
 

@@ -98,8 +98,8 @@ class Sprite {
       this.sizeX,
       this.sizeY,
       // 画哪
-      positionX - (this.sizeDrawX - UNIT_WIDTH) / 2,
-      positionY - (this.sizeDrawY - UNIT_HEIGHT),
+      positionX - (this.sizeDrawX - exports.UNIT_WIDTH) / 2,
+      positionY - (this.sizeDrawY - exports.UNIT_HEIGHT),
       // 实际大小
       this.sizeDrawX,
       this.sizeDrawY
@@ -147,7 +147,7 @@ class Block extends Entity {
     this.state = new EntityState(-1, x, y);
     // 魔法数字...
     this.sprite =
-        new Sprite(exports.types.entity.block, 64, 64, UNIT_WIDTH, UNIT_HEIGHT);
+        new Sprite(exports.types.entity.block, 64, 64, exports.UNIT_WIDTH, exports.UNIT_HEIGHT);
     this.sprite.startX =
         Math.floor(Math.random() * 5) * this.sprite.sizeX; // 0,1,2,3,4
     this.sprite.startY = 0;
@@ -166,7 +166,7 @@ class Box extends Entity {
     this.state = new EntityState(id, x, y);
     // 魔法数字...
     this.sprite =
-      new Sprite(exports.types.entity.box, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
+      new Sprite(exports.types.entity.box, 64, 79, exports.UNIT_WIDTH, exports.UNIT_HEIGHT * 1.23);
     this.sprite.cycleTime = -1;
     this.sprite.maxCycle = 1;
   }
@@ -182,7 +182,7 @@ class Loot extends Entity {
     this.state = new EntityState(id, x, y);
     // 魔法数字...
     this.sprite = new Sprite(
-        exports.types.entity.loot, 32, 48, UNIT_WIDTH * 0.9375, UNIT_HEIGHT * 0.9375);
+        exports.types.entity.loot, 32, 48, exports.UNIT_WIDTH * 0.9375, exports.UNIT_HEIGHT * 0.9375);
     this.sprite.startX = type * this.sprite.sizeX;
     this.sprite.cycleTime = INFINITE;
     this.sprite.maxCycle = 1;
@@ -196,16 +196,16 @@ let loots = {};
 class Player extends Entity {
   constructor(id, x, y) {
     super();
-    this.state = new PlayerState(id, x, y);
+    this.state = new exports.PlayerState(id, x, y);
     this.sizeX = 0;
     this.sizeY = 0;
     // 魔法数字...
     this.sprite = new Sprite(
-        exports.types.entity.player, 96, 118, UNIT_WIDTH * 1.5, UNIT_HEIGHT * 1.875);
+        exports.types.entity.player, 96, 118, exports.UNIT_WIDTH * 1.5, exports.UNIT_HEIGHT * 1.875);
     this.sprite.maxCycle = 4;
     this.sprite.frameVector = [1,2,0,3];
     this.sprite.cycleTime = 170; // ms
-
+    this.dir = exports.types.dir.down;
   }
 
   downPlayer() {
@@ -215,8 +215,8 @@ class Player extends Entity {
         exports.types.entity.player_downed,
         74,
         83,
-        UNIT_WIDTH * 1.5,
-        UNIT_HEIGHT * 1.875
+        exports.UNIT_WIDTH * 1.5,
+        exports.UNIT_HEIGHT * 1.875
     );
     this.sprite.maxCycle = 4;
     this.sprite.cycleTime = 170;
@@ -230,12 +230,6 @@ class Player extends Entity {
     super.update(delta);
     if (!this.state.downed) {
       this.sprite.updateDir(this.dir);
-    }
-
-    let netNowTs = +new Date();
-    let netDelta = netNowTs - netOldTs;
-    if (netDelta < 50) {
-      return;
     }
 
     if (keyPressed[exports.types.key.up]) {
@@ -403,10 +397,10 @@ function streamGame(data) {
   // 场景维度
   MAX_ROW = data.maxRow;
   MAX_COL = data.maxCol;
-  UNIT_WIDTH = data.unitWidth;
-  UNIT_HEIGHT = data.unitHeight;
-  WIDTH = UNIT_WIDTH * MAX_COL;
-  HEIGHT = UNIT_HEIGHT * MAX_ROW;
+  exports.UNIT_WIDTH = data.unitWidth;
+  exports.UNIT_HEIGHT = data.unitHeight;
+  WIDTH = exports.UNIT_WIDTH * MAX_COL;
+  HEIGHT = exports.UNIT_HEIGHT * MAX_ROW;
 
   let canvas = document.getElementById("canvas");
   ctx = canvas.getContext("2d");
@@ -419,7 +413,7 @@ function streamGame(data) {
   for (i = 0; i < MAX_ROW; i++) {
     blockMatrix[i] = new Array(MAX_COL);
     for (j = 0; j < MAX_COL; j++)
-      blockMatrix[i][j] = new Block(j * UNIT_WIDTH, i * UNIT_HEIGHT);
+      blockMatrix[i][j] = new Block(j * exports.UNIT_WIDTH, i * exports.UNIT_HEIGHT);
   }
 
   // 箱子
@@ -443,27 +437,20 @@ function streamGame(data) {
   }
 
   // 掉落
-  loots = {};
+  exports.loots = {};
   for (i in data.loots) {
     let loot = data.loots[i];
-    let id = loot[0];
-    let x = loot[1];
-    let y = loot[2];
-    let type = loot[3];
-    loots[L[0]] = new Loot(id, x, y, type);
+    exports.loots[L[0]] = new Loot(loot.id, loot.x, loot.y, loot.type);
   }
 
   // 玩家
-  players = {};
+  exports.players = {};
   for (i in data.players) {
-    let player = data.player[i];
-    let id = player[0];
-    let x = player[1];
-    let y = player[2];
-    let downed = player[3];
-    players[id] = new Player(id, x, y);
-    if (downed == true)
-      players[id].downPlayer();
+    let player = data.players[i];
+    exports.players[player.id] = new Player(player.id, player.x, player.y);
+    console.log('created ' + player.id);
+    if (player.downed == true)
+      exports.players[id].downPlayer();
   }
 
   // 开始游戏
@@ -595,7 +582,7 @@ function update(delta) {
     // handleMessage(exports.msgQueue.pop());
   }
   // 更新玩家
-  for (i in exports.players) { players[i].update(delta); }
+  for (i in exports.players) { exports.players[i].update(delta); }
   // 更新其他
   for (i in exports.waves) { exports.waves[i].update(delta); }
   for (i in exports.bombs) { exports.bombs[i].update(delta); }
