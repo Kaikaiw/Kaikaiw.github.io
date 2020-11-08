@@ -1,8 +1,10 @@
 # aesct.github.io
-渣新:..
-
-###^ I
-###> L
-###v K
-###< J
-###O SPACE
+运行服务端 0.0.0.0/8081
+```
+npm install
+npm start
+```
+运行客户端 0.0.0.0/8000
+```
+python3 -m http.server
+```
