@@ -1,14 +1,14 @@
 // =============================================================================
 //  客户端
 // =============================================================================
-var WIDTH;
-var HEIGHT;
-var pendingInputs = new Queue(MAX_QUEUE);
+let WIDTH;
+let HEIGHT;
+let pendingInputs = new exports.Queue(exports.MAX_QUEUE);
 
 // =============================================================================
 //  各种资源
 // =============================================================================
-var Resource = {};
+let Resource = {};
 Resource.pngMap = {};
 Resource.sndMap = {};
 // 图片读取为异步, 等待所有图片读取后init()
@@ -18,11 +18,11 @@ Resource.onReady = null;
 
 Resource.loadSnds = function(resArray) {
   resArray.forEach(function(res) {
-    var key = res[0];
-    var val = res[1];
-    var vol = res[2];
-    var loop = res[3];
-    var snd = new Audio(val);
+    let key = res[0];
+    let val = res[1];
+    let vol = res[2];
+    let loop = res[3];
+    let snd = new Audio(val);
     snd.volume = vol;
     snd.loop = loop;
     Resource.sndMap[key] = snd;
@@ -34,9 +34,9 @@ Resource.loadPngs = function(resArray, onReady) {
   Resource.onReady = onReady;
 
   resArray.forEach(function(kv) {
-    var key = kv[0];
-    var val = kv[1];
-    var png = new Image();
+    let key = kv[0];
+    let val = kv[1];
+    let png = new Image();
     png.onload = function() {
       Resource.pngMap[key] = png;
       Resource.pngNow++;
@@ -54,7 +54,7 @@ Resource.getPng = function(key) {
 
 Resource.playSnd = function(key) {
   Resource.sndMap[key].currentTime = 0;
-  var promise = Resource.sndMap[key].play();
+  let promise = Resource.sndMap[key].play();
   if (promise !== undefined) {
     promise.then(_ => {
       // Autoplay started!
@@ -147,7 +147,7 @@ class Block extends Entity {
     this.state = new EntityState(-1, x, y);
     // 魔法数字...
     this.sprite =
-        new Sprite(types.entity.block, 64, 64, UNIT_WIDTH, UNIT_HEIGHT);
+        new Sprite(exports.types.entity.block, 64, 64, UNIT_WIDTH, UNIT_HEIGHT);
     this.sprite.startX =
         Math.floor(Math.random() * 5) * this.sprite.sizeX; // 0,1,2,3,4
     this.sprite.startY = 0;
@@ -155,7 +155,7 @@ class Block extends Entity {
     this.sprite.maxCycle = 1;
   }
 }
-var blockMatrix;
+let blockMatrix;
 
 // =============================================================================
 //  盒子
@@ -166,12 +166,12 @@ class Box extends Entity {
     this.state = new EntityState(id, x, y);
     // 魔法数字...
     this.sprite =
-      new Sprite(types.entity.box, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
+      new Sprite(exports.types.entity.box, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
     this.sprite.cycleTime = -1;
     this.sprite.maxCycle = 1;
   }
 }
-var boxMatrix;
+let boxMatrix;
 
 // =============================================================================
 //  掉落
@@ -182,13 +182,13 @@ class Loot extends Entity {
     this.state = new EntityState(id, x, y);
     // 魔法数字...
     this.sprite = new Sprite(
-        types.entity.loot, 32, 48, UNIT_WIDTH * 0.9375, UNIT_HEIGHT * 0.9375);
+        exports.types.entity.loot, 32, 48, UNIT_WIDTH * 0.9375, UNIT_HEIGHT * 0.9375);
     this.sprite.startX = type * this.sprite.sizeX;
     this.sprite.cycleTime = INFINITE;
     this.sprite.maxCycle = 1;
   }
 }
-var loots = {};
+let loots = {};
 
 // =============================================================================
 //  玩家
@@ -201,7 +201,7 @@ class Player extends Entity {
     this.sizeY = 0;
     // 魔法数字...
     this.sprite = new Sprite(
-        types.entity.player, 96, 118, UNIT_WIDTH * 1.5, UNIT_HEIGHT * 1.875);
+        exports.types.entity.player, 96, 118, UNIT_WIDTH * 1.5, UNIT_HEIGHT * 1.875);
     this.sprite.maxCycle = 4;
     this.sprite.frameVector = [1,2,0,3];
     this.sprite.cycleTime = 170; // ms
@@ -212,7 +212,7 @@ class Player extends Entity {
     this.state.downPlayer();
     // 魔法数字...
     this.sprite = new Sprite(
-        types.entity.player_downed,
+        exports.types.entity.player_downed,
         74,
         83,
         UNIT_WIDTH * 1.5,
@@ -232,40 +232,40 @@ class Player extends Entity {
       this.sprite.updateDir(this.dir);
     }
 
-    var netNowTs = +new Date();
-    var netDelta = netNowTs - netOldTs;
+    let netNowTs = +new Date();
+    let netDelta = netNowTs - netOldTs;
     if (netDelta < 50) {
       return;
     }
 
-    if (keyPressed[types.key.up]) {
-      var input = {};
+    if (keyPressed[exports.types.key.up]) {
+      let input = {};
       input.delta = delta;
-      input.key = types.key.up;
+      input.key = exports.types.key.up;
       pendingInputs.put(input);
       applyInput(input);
-    } else if (keyPressed[types.key.right]) {
-      var input = {};
+    } else if (keyPressed[exports.types.key.right]) {
+      let input = {};
       input.delta = delta;
-      input.key = types.key.right;
+      input.key = exports.types.key.right;
       pendingInputs.put(input);
       applyInput(input);
-    } else if (keyPressed[types.key.down]) {
-      var input = {};
+    } else if (keyPressed[exports.types.key.down]) {
+      let input = {};
       input.delta = delta;
-      input.key = types.key.down;
+      input.key = exports.types.key.down;
       pendingInputs.put(input);
       applyInput(input);
-    } else if (keyPressed[types.key.left]) {
-      var input = {};
+    } else if (keyPressed[exports.types.key.left]) {
+      let input = {};
       input.delta = delta;
-      input.key = types.key.left;
+      input.key = exports.types.key.left;
       pendingInputs.put(input);
       applyInput(input);
     }
   }
 }
-var localPlayerId;
+let localPlayerId;
 
 // // =============================================================================
 // //  炸弹
@@ -274,7 +274,7 @@ var localPlayerId;
 //   constructor(id, x, y, power) {
 //     this.state = new BombState(id, x, y, power);
 //     // 魔法数字...
-//     this.sprite = new Sprite(types.entity.bomb, 64, 64, 40, 40);
+//     this.sprite = new Sprite(exports.types.entity.bomb, 64, 64, 40, 40);
 //     this.sprite.cycleTime = 170;
 //     this.sprite.maxCycle = 3;
 //   }
@@ -287,9 +287,9 @@ var localPlayerId;
 //     this.state.chainBomb();
 //   }
 // }
-// var bombs = [];
-// var bombVisit = {};
-// var bombMatrix;
+// let bombs = [];
+// let bombVisit = {};
+// let bombMatrix;
 //
 // // =============================================================================
 // //  爆波
@@ -300,7 +300,7 @@ var localPlayerId;
 //     this.currTime = 0;
 //     this.cycleTime = 400;
 //
-//     this.sprite = new Sprite(TYPES.CHAR.WAVE, 64, 64, 40, 40);
+//     this.sprite = new Sprite(exports.types.CHAR.WAVE, 64, 64, 40, 40);
 //     this.sprite.startY = ((dir + 1) % 4) * this.sprite.sizeY;
 //     this.sprite.cycleTime = 250;
 //     this.sprite.maxCycle = 2;
@@ -310,14 +310,14 @@ var localPlayerId;
 //
 //   }
 // }
-// var Wave = Entity.extend({
+// let Wave = Entity.extend({
 //   update: function(dt) {
 //     this._super(dt);
 //
 //     this.currTime += dt;
 //     if (this.currTime >= this.spread_time) {
 //       this.spread_time = INFINITE;
-//       var to_spread = [];
+//       let to_spread = [];
 //
 //       switch(this.dir) {
 //       case TYPES.DIRECTION.UP:
@@ -340,10 +340,10 @@ var localPlayerId;
 //     }
 //
 //     for (ts in to_spread) {
-//       var x = to_spread[ts][0];
-//       var y = to_spread[ts][1];
-//       var z = to_spread[ts][2];
-//       var wid = Resource.getID();
+//       let x = to_spread[ts][0];
+//       let y = to_spread[ts][1];
+//       let z = to_spread[ts][2];
+//       let wid = Resource.getID();
 //       waves[wid] = new Wave(wid, x, y, this.dir, z, this.bs);
 //     }
 //
@@ -353,24 +353,24 @@ var localPlayerId;
 //     }
 //   }
 // });
-// var waves = {};
+// let waves = {};
 
 // =============================================================================
 //  客户端本体
 // =============================================================================
 // 画布
-var ctx;
+let ctx;
 // 预测补正
-var messageSequenceId = 0;
-var pendingQueue = new Queue(MAX_QUEUE);
+let messageSequenceId = 0;
+let pendingQueue = new Queue(exports.MAX_QUEUE);
 // 键输入
-var validKeys = {};
-validKeys[types.key.up] = 1;
-validKeys[types.key.right] = 1;
-validKeys[types.key.down] = 1;
-validKeys[types.key.left] = 1;
-validKeys[types.key.space] = 1;
-var keyPressed = {};
+let validKeys = {};
+validKeys[exports.types.key.up] = 1;
+validKeys[exports.types.key.right] = 1;
+validKeys[exports.types.key.down] = 1;
+validKeys[exports.types.key.left] = 1;
+validKeys[exports.types.key.space] = 1;
+let keyPressed = {};
 // 时间
 
 function init() {
@@ -387,7 +387,7 @@ function init() {
   });
 
   // websocket
-  var socket = io("0.0.0.0:8081");
+  let socket = io("0.0.0.0:8081");
   socket.on('connect', function(data) {
     socket.emit('stream');
   });
@@ -408,7 +408,7 @@ function streamGame(data) {
   WIDTH = UNIT_WIDTH * MAX_COL;
   HEIGHT = UNIT_HEIGHT * MAX_ROW;
 
-  var canvas = document.getElementById("canvas");
+  let canvas = document.getElementById("canvas");
   ctx = canvas.getContext("2d");
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
@@ -431,8 +431,8 @@ function streamGame(data) {
     }
   }
   for (i in data.boxes) {
-    var box = data.boxes[i];
-    boxes[box.id] = new Box(box.id, box.x, box.y);
+    let box = data.boxes[i];
+    exports.boxes[box.id] = new Box(box.id, box.x, box.y);
     boxMatrix[box.rowId][box.colId] = 1;
   }
 
@@ -445,29 +445,29 @@ function streamGame(data) {
   // 掉落
   loots = {};
   for (i in data.loots) {
-    var loot = data.loots[i];
-    var id = loot[0];
-    var x = loot[1];
-    var y = loot[2];
-    var type = loot[3];
+    let loot = data.loots[i];
+    let id = loot[0];
+    let x = loot[1];
+    let y = loot[2];
+    let type = loot[3];
     loots[L[0]] = new Loot(id, x, y, type);
   }
 
   // 玩家
   players = {};
   for (i in data.players) {
-    var player = data.player[i];
-    var id = player[0];
-    var x = player[1];
-    var y = player[2];
-    var downed = player[3];
+    let player = data.player[i];
+    let id = player[0];
+    let x = player[1];
+    let y = player[2];
+    let downed = player[3];
     players[id] = new Player(id, x, y);
     if (downed == true)
       players[id].downPlayer();
   }
 
   // 开始游戏
-  Resource.playSnd(types.sound.bgm);
+  Resource.playSnd(exports.types.sound.bgm);
   oldTs = +new Date();
   FRAME_RATE = 60;
   GAME_LOOP = setInterval(tick, 1000.0 / FRAME_RATE);
@@ -475,25 +475,25 @@ function streamGame(data) {
 
 // function handleMessage(req) {
 //   for (p in req.data) {
-//     var packet = req.data[p];
-//     var op = packet.op;
-//     var data = packet.data;
+//     let packet = req.data[p];
+//     let op = packet.op;
+//     let data = packet.data;
 //     switch (op) {
 //     case TYPES.OP.MOVE:
 //       for (p in data) {
-//         var dt = data[p].delta;
-//         var id = data[p].id;
-//         var pos = data[p].pos;
+//         let dt = data[p].delta;
+//         let id = data[p].id;
+//         let pos = data[p].pos;
 //
 //         if (dt) {
 //           setPlayerPos(id, pos);
 //           if (id == localPlayerId) {
-//             var ack = data[p].ack;
+//             let ack = data[p].ack;
 //             pendingQueue[ack].time += dt;
 //             while (ack != seq) {
-//               var nack = (ack + 1) % MAX_QUEUE;
+//               let nack = (ack + 1) % MAX_QUEUE;
 //               if (pendingQueue[ack].op == TYPES.OP.KEYD) {
-//                 var next_time = (nack == seq) ? Date.now() : pendingQueue[nack].time;
+//                 let next_time = (nack == seq) ? Date.now() : pendingQueue[nack].time;
 //                 applyRec(pendingQueue[ack], Math.max(0, next_time - pendingQueue[ack].time));
 //               }
 //               ack = nack;
@@ -513,15 +513,15 @@ function streamGame(data) {
 //       break;
 //     case TYPES.OP.NBOX:
 //       for (d in data) {
-//         var B = boxes[data[d]];
+//         let B = exports.boxes[data[d]];
 //         boxMatrix[B.rowId][B.colId] = 0;
-//         delete boxes[data[d]];
+//         delete exports.boxes[data[d]];
 //       }
 //       break;
 //     case TYPES.OP.LOOT:
 //       for (d in data) {
-//         var id = data[d].id;
-//         var pos = data[d].pos;
+//         let id = data[d].id;
+//         let pos = data[d].pos;
 //         loots[id] = new Loot(id, pos[0], pos[1], pos[2]);
 //       }
 //       break;
@@ -538,11 +538,11 @@ function streamGame(data) {
 //       break;
 //     case TYPES.OP.NEW:
 //     case TYPES.OP.LOCAL:
-//       var id = data[0];
-//       var x = data[1];
-//       var y = data[2];
-//       var t = data[3];
-//       var n = data[4];
+//       let id = data[0];
+//       let x = data[1];
+//       let y = data[2];
+//       let t = data[3];
+//       let n = data[4];
 //       players[id] = new Player(id, x, y, t);
 //       if (op == TYPES.OP.LOCAL) {
 //         localPlayerId = id;
@@ -560,9 +560,9 @@ function streamGame(data) {
 // }
 //
 // function setPlayerPos(id, data) {
-//   var x = data[0];
-//   var y = data[1];
-//   var d = data[2];
+//   let x = data[0];
+//   let y = data[1];
+//   let d = data[2];
 //   players[id].x = x;
 //   players[id].y = y;
 //   players[id].dir = d;
@@ -573,7 +573,7 @@ function streamGame(data) {
 // function setBomb(data) {
 //   if (data.id == localPlayerId)
 //     Resource.playSnd(TYPES.SOUND.LAY);
-//   var pos = data.pos;
+//   let pos = data.pos;
 //   bombs[pos[0]] = new Bomb(pos[0], pos[1], pos[2], pos[3]);
 //   bombMatrix[bombs[pos[0]].rowId][bombs[pos[0]].colId] = pos[0];
 //   bombs[pos[0]].doChain();
@@ -581,9 +581,9 @@ function streamGame(data) {
 //
 
 function tick() {
-  var nowTs = +new Date();
-  var oldTs_ = oldTs || nowTs;
-  var delta = nowTs - oldTs_;
+  let nowTs = +new Date();
+  let oldTs_ = oldTs || nowTs;
+  let delta = nowTs - oldTs_;
   oldTs = nowTs;
   update(delta);
   render();
@@ -591,20 +591,20 @@ function tick() {
 
 function update(delta) {
   // 接收网络消息
-  if (!msgQueue.empty()) {
-    // handleMessage(msgQueue.pop());
+  if (!exports.msgQueue.empty()) {
+    // handleMessage(exports.msgQueue.pop());
   }
   // 更新玩家
-  for (i in players) { players[i].update(delta); }
+  for (i in exports.players) { players[i].update(delta); }
   // 更新其他
-  for (i in waves) { waves[i].update(delta); }
-  for (i in bombs) { bombs[i].update(delta); }
-  for (i in boxes) { boxes[i].update(delta); }
-  for (i in loots) { loots[l].update(delta); }
+  for (i in exports.waves) { exports.waves[i].update(delta); }
+  for (i in exports.bombs) { exports.bombs[i].update(delta); }
+  for (i in exports.boxes) { exports.boxes[i].update(delta); }
+  for (i in exports.loots) { exports.loots[l].update(delta); }
 
   // 发送网络消息, Lockstep = 20FPS
-  if (!sendQueue.empty() && delta >= 50) {
-    socket.emit('opcode', {data: sendQueue.pop()});
+  if (!exports.sendQueue.empty() && delta >= 50) {
+    socket.emit('opcode', {data: exports.sendQueue.pop()});
   }
 }
 
@@ -615,30 +615,30 @@ function render() {
     }
   }
 
-  for (i in waves) { waves[w].render(); }
-  for (i in loots) { loots[i].render(); }
-  for (i in players) { players[i].render(); }
-  for (i in bombs) { bombs[i].render(); }
-  for (i in boxes) { boxes[i].render(); }
+  for (i in exports.waves) { exports.waves[w].render(); }
+  for (i in exports.loots) { exports.loots[i].render(); }
+  for (i in exports.players) { exports.players[i].render(); }
+  for (i in exports.bombs) { exports.bombs[i].render(); }
+  for (i in exports.boxes) { exports.boxes[i].render(); }
 }
 
 // =============================================================================
 //  载入资源
 // =============================================================================
 Resource.loadSnds([ // [类型ID, 文件, 音量, 是否循环]
-  [        types.sound.bgm,   "bg.ogg", 0.3, 1],
-  [   types.sound.put_bomb,  "lay.wav",   1, 0],
-  [    types.sound.explode,  "exp.wav",   1, 0],
-  [types.sound.pickup_loot, "loot.wav",   1, 0]
+  [        exports.types.sound.bgm,   "bg.ogg", 0.3, 1],
+  [   exports.types.sound.put_bomb,  "lay.wav",   1, 0],
+  [    exports.types.sound.explode,  "exp.wav",   1, 0],
+  [exports.types.sound.pickup_loot, "loot.wav",   1, 0]
 ]);
 
 Resource.loadPngs([ // [类型ID, 文件]
-  [       types.entity.player,   "remi.png"],
-  [         types.entity.bomb,   "bomb.png"],
-  [         types.entity.wave,   "wave.png"],
-  [        types.entity.block,  "block.png"],
-  [          types.entity.box,    "box.png"],
-  [         types.entity.loot,   "loot.png"],
-  [types.entity.player_downed,   "netu.png"]],
+  [       exports.types.entity.player,   "remi.png"],
+  [         exports.types.entity.bomb,   "bomb.png"],
+  [         exports.types.entity.wave,   "wave.png"],
+  [        exports.types.entity.block,  "block.png"],
+  [          exports.types.entity.box,    "box.png"],
+  [         exports.types.entity.loot,   "loot.png"],
+  [exports.types.entity.player_downed,   "netu.png"]],
   init
 );

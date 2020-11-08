@@ -1,7 +1,11 @@
+if (typeof exports == 'undefined') {
+  var exports = {};
+}
+
 // =============================================================================
 //  类型
 // =============================================================================
-var types = {
+exports.types = {
   // 实体
   entity: {
     player:            1,
@@ -81,7 +85,7 @@ class Queue {
   }
 
   pop() {
-    var d = this.data[this.queueL];
+    let d = this.data[this.queueL];
     this.queueL = (this.queueL + 1) % this.size;
     return d;
   }
@@ -91,31 +95,35 @@ class Queue {
     this.queueR = (this.queueR + 1) % this.size;
   }
 }
+exports.Queue = Queue;
 
 // =============================================================================
 //  全局配置 / 坐标转换
 // =============================================================================
-var INFINITE = Number.MAX_VALUE;
-var MAX_ID = 131072;
-var MAX_QUEUE = 1024;
-var MAX_ROW;
-var MAX_COL;
-var UNIT_WIDTH;
-var UNIT_HEIGHT;
+exports.INFINITE = Number.MAX_VALUE;
+exports.MAX_ID = 131072;
+exports.MAX_QUEUE = 1024;
+exports.MAX_ROW;
+exports.MAX_COL;
+exports.UNIT_WIDTH;
+exports.UNIT_HEIGHT;
 
 function bind(rowId, colId) {
   return rowId >= 0 && rowId < MAX_ROW && colId >= 0 && colId < MAX_COL;
 }
+exports.bind = bind;
 
 // 转换垂直坐标到2d矩阵行
 function getRowID(vertical) {
-  return Math.floor((vertical + UNIT_HEIGHT / 2) / UNIT_HEIGHT);
+  return Math.floor((vertical + exports.UNIT_HEIGHT / 2) / exports.UNIT_HEIGHT);
 }
+exports.getRowID = getRowID;
 
 // 转换水平坐标到2d矩阵列
 function getColID(horizontal) {
-  return Math.floor((horizontal + UNIT_WIDTH / 2) / UNIT_WIDTH);
+  return Math.floor((horizontal + exports.UNIT_WIDTH / 2) / exports.UNIT_WIDTH);
 }
+exports.getColID = getColID;
 
 // =============================================================================
 //  实体核心
@@ -130,12 +138,13 @@ class EntityState {
     this.dir = 0;
   }
 }
-var boxes = {};
+exports.EntityState = EntityState;
+exports.boxes = {};
 
 // =============================================================================
 //  玩家核心
 // =============================================================================
-class PlayerState extends EntityState {
+exports.PlayerState = class extends EntityState {
   constructor(id, x, y){
     super(id, x, y);
     this.downed = false;
@@ -149,26 +158,26 @@ class PlayerState extends EntityState {
 
   move(delta, dir) {
     this.dir = dir;
-    var toX = this.x;
-    var toY = this.y;
+    let toX = this.x;
+    let toY = this.y;
 
     switch(dir) {
     case types.dir.up:
-      toY = Math.max(0, this.y - this.speed * dt);
+      toY = Math.max(0, this.y - this.speed * delta);
       break;
     case types.dir.right:
-      toX = Math.min(WIDTH - this.sizeX, this.x + this.speed * dt);
+      toX = Math.min(WIDTH - this.sizeX, this.x + this.speed * delta);
       break;
     case types.dir.down:
-      toY = Math.min(HEIGHT - this.sizeY, this.y + this.speed * dt);
+      toY = Math.min(HEIGHT - this.sizeY, this.y + this.speed * delta);
       break;
     case types.dir.left:
-      toX = Math.max(0, this.x - this.speed * dt);
+      toX = Math.max(0, this.x - this.speed * delta);
       break;
     }
 
-    var toColId = getColID(toX);
-    var toRowId = getRowID(toY);
+    let toColId = getColID(toX);
+    let toRowId = getRowID(toY);
     if ((toRowId != this.rowId || toColId != this.colId) &&
         (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId])) {
       return;
@@ -181,8 +190,8 @@ class PlayerState extends EntityState {
   }
 
   applyInput(input) {
-    var key = input.key;
-    var delta = input.delta;
+    let key = input.key;
+    let delta = input.delta;
 
     switch (key) {
     case types.key.up:
@@ -200,7 +209,7 @@ class PlayerState extends EntityState {
     }
   }
 }
-var players = {};
+exports.players = {};
 
 // // =============================================================================
 // //  炸弹核心
@@ -220,7 +229,7 @@ var players = {};
 //     bombMatrix[this.rowId][this.colId] = 0;
 //     delete bombs[this.id];
 //     // [行, 列, 下一位置, 最大位置, 方向]
-//     var waveToGenerate = [
+//     let waveToGenerate = [
 //       [this.rowId, this.colId, 0, 0, 0],
 //       [this.rowId - 1, this.colId, this.rowId - 1,
 //        this.rowId - this.power,
@@ -237,13 +246,13 @@ var players = {};
 //     ];
 //
 //     for (i in waveToGenerate) {
-//       var rowId = waveToGenerate[i][0];
-//       var colId = waveToGenerate[i][1];
-//       var nextRowOrColId = waveToGenerate[i][2];
-//       var maxRowOrColId = waveToGenerate[i][3];
-//       var dir = waveToGenerate[i][4];
+//       let rowId = waveToGenerate[i][0];
+//       let colId = waveToGenerate[i][1];
+//       let nextRowOrColId = waveToGenerate[i][2];
+//       let maxRowOrColId = waveToGenerate[i][3];
+//       let dir = waveToGenerate[i][4];
 //       if (bind(rowId, colId)) {
-//         var id = IDPool.getID();
+//         let id = IDPool.getID();
 //         waves[id] = new WaveState(
 //             id, rowId, colId, dir, nextRowOrColId, maxRowOrColId);
 //       }
@@ -298,9 +307,9 @@ var players = {};
 //     }
 //   }
 // }
-var bombs = {};
-// var bombVisit = {};
-// var bombMatrix;
+exports.bombs = {};
+// let bombVisit = {};
+// let bombMatrix;
 //
 // // =============================================================================
 // //  爆波
@@ -320,28 +329,28 @@ var bombs = {};
 //     }
 //   }
 // }
-var waves = {};
+exports.waves = {};
 
 
 // =============================================================================
 //  网络
 // =============================================================================
-var msgQueue = new Queue(MAX_QUEUE);
-var sendQueue = new Queue(MAX_QUEUE);
-var oldNetTs = 0;
+exports.msgQueue = new Queue(exports.MAX_QUEUE);
+exports.sendQueue = new Queue(exports.MAX_QUEUE);
+exports.oldNetTs = 0;
 
 // =============================================================================
 //  UTIL
 // =============================================================================
-var GAME_LOOP = null; // 主循环
-var FRAME_RATE = 0;
-var oldTs = 0;
+exports.GAME_LOOP = null; // 主循环
+exports.FRAME_RATE = 0;
+exports.oldTs = 0;
 
-var IDPool = {};
-IDPool.idQueue = new Queue(MAX_ID);
+IDPool = {};
+IDPool.idQueue = new Queue(exports.MAX_ID);
 
 IDPool.prepID = function() {
-  for (i = 0; i < MAX_ID; i++) {
+  for (i = 0; i < exports.MAX_ID; i++) {
     IDPool.idQueue.put(i);
   }
 }
@@ -353,3 +362,5 @@ IDPool.getID = function() {
 IDPool.releaseID = function(id) {
   IDPool.idQueue.put(id);
 }
+
+exports.IDPool = IDPool;
