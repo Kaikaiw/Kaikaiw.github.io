@@ -1,8 +1,6 @@
 // =============================================================================
 //  客户端
 // =============================================================================
-let WIDTH;
-let HEIGHT;
 let pendingInputs = new exports.Queue(exports.MAX_QUEUE);
 
 // =============================================================================
@@ -144,8 +142,8 @@ class Entity {
 class Block extends Entity {
   constructor(x, y) {
     super();
-    this.state = new EntityState(-1, x, y);
     // 魔法数字...
+    this.state = new EntityState(-1, x, y, 64, 64);
     this.sprite =
         new Sprite(exports.types.entity.block, 64, 64, exports.UNIT_WIDTH, exports.UNIT_HEIGHT);
     this.sprite.startX =
@@ -163,7 +161,7 @@ let blockMatrix;
 class Box extends Entity {
   constructor(id, x, y) {
     super();
-    this.state = new EntityState(id, x, y);
+    this.state = new EntityState(id, x, y, 64, 79);
     // 魔法数字...
     this.sprite =
       new Sprite(exports.types.entity.box, 64, 79, exports.UNIT_WIDTH, exports.UNIT_HEIGHT * 1.23);
@@ -171,7 +169,6 @@ class Box extends Entity {
     this.sprite.maxCycle = 1;
   }
 }
-let boxMatrix;
 
 // =============================================================================
 //  掉落
@@ -179,7 +176,7 @@ let boxMatrix;
 class Loot extends Entity {
   constructor(id, x, y, type) {
     super();
-    this.state = new EntityState(id, x, y);
+    this.state = new EntityState(id, x, y, 32, 48);
     // 魔法数字...
     this.sprite = new Sprite(
         exports.types.entity.loot, 32, 48, exports.UNIT_WIDTH * 0.9375, exports.UNIT_HEIGHT * 0.9375);
@@ -194,18 +191,16 @@ let loots = {};
 //  玩家
 // =============================================================================
 class Player extends Entity {
-  constructor(id, x, y) {
+  constructor(id, x, y, sizeX, sizeY) {
     super();
-    this.state = new exports.PlayerState(id, x, y);
-    this.sizeX = 0;
-    this.sizeY = 0;
+    this.state = new exports.PlayerState(id, x, y, sizeX, sizeY);
     // 魔法数字...
     this.sprite = new Sprite(
-        exports.types.entity.player, 96, 118, exports.UNIT_WIDTH * 1.5, exports.UNIT_HEIGHT * 1.875);
+        exports.types.entity.player, sizeX, sizeY, exports.UNIT_WIDTH * 1.5, exports.UNIT_HEIGHT * 1.875);
     this.sprite.maxCycle = 4;
     this.sprite.frameVector = [1,2,0,3];
     this.sprite.cycleTime = 170; // ms
-    this.dir = exports.types.dir.down;
+    this.state.dir = exports.types.dir.down;
   }
 
   downPlayer() {
@@ -229,33 +224,30 @@ class Player extends Entity {
   update(delta) {
     super.update(delta);
     if (!this.state.downed) {
-      this.sprite.updateDir(this.dir);
+      this.sprite.updateDir(this.state.dir);
     }
 
+    let input = {};
     if (keyPressed[exports.types.key.up]) {
-      let input = {};
       input.delta = delta;
       input.key = exports.types.key.up;
-      pendingInputs.put(input);
-      applyInput(input);
     } else if (keyPressed[exports.types.key.right]) {
-      let input = {};
       input.delta = delta;
       input.key = exports.types.key.right;
-      pendingInputs.put(input);
-      applyInput(input);
     } else if (keyPressed[exports.types.key.down]) {
-      let input = {};
       input.delta = delta;
       input.key = exports.types.key.down;
-      pendingInputs.put(input);
-      applyInput(input);
     } else if (keyPressed[exports.types.key.left]) {
-      let input = {};
       input.delta = delta;
       input.key = exports.types.key.left;
-      pendingInputs.put(input);
-      applyInput(input);
+    }
+
+    if (Object.keys(input).length !== 0) {
+      this.applyInput(input);
+
+      // if (delta >= 50) {
+      //   sendQueue.push({});
+      // }
     }
   }
 }
@@ -283,7 +275,7 @@ let localPlayerId;
 // }
 // let bombs = [];
 // let bombVisit = {};
-// let bombMatrix;
+// let exports.bombMatrix;
 //
 // // =============================================================================
 // //  爆波
@@ -319,11 +311,11 @@ let localPlayerId;
 //           to_spread.push([this.cs - 1, this.colId, this.cs - 1]);
 //         break;
 //       case TYPES.DIRECTION.RIGHT:
-//         if (this.cs + 1 < MAX_COL && this.cs + 1 <= this.bs)
+//         if (this.cs + 1 < exports.MAX_COL && this.cs + 1 <= this.bs)
 //           to_spread.push([this.rowId, this.cs + 1, this.cs + 1]);
 //         break;
 //       case TYPES.DIRECTION.DOWN:
-//         if (this.cs + 1 < MAX_ROW && this.cs + 1 <= this.bs)
+//         if (this.cs + 1 < exports.MAX_ROW && this.cs + 1 <= this.bs)
 //           to_spread.push([this.cs + 1, this.colId, this.cs + 1]);
 //         break;
 //       case TYPES.DIRECTION.LEFT:
@@ -395,45 +387,45 @@ function init() {
 
 function streamGame(data) {
   // 场景维度
-  MAX_ROW = data.maxRow;
-  MAX_COL = data.maxCol;
+  exports.MAX_ROW = data.maxRow;
+  exports.MAX_COL = data.maxCol;
   exports.UNIT_WIDTH = data.unitWidth;
   exports.UNIT_HEIGHT = data.unitHeight;
-  WIDTH = exports.UNIT_WIDTH * MAX_COL;
-  HEIGHT = exports.UNIT_HEIGHT * MAX_ROW;
+  exports.WIDTH = exports.UNIT_WIDTH * exports.MAX_COL;
+  exports.HEIGHT = exports.UNIT_HEIGHT * exports.MAX_ROW;
 
   let canvas = document.getElementById("canvas");
   ctx = canvas.getContext("2d");
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
+  canvas.width = exports.WIDTH;
+  canvas.height = exports.HEIGHT;
   canvas.style.position = "absolute";
 
   // 背景
-  blockMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    blockMatrix[i] = new Array(MAX_COL);
-    for (j = 0; j < MAX_COL; j++)
+  blockMatrix = new Array(exports.MAX_ROW);
+  for (i = 0; i < exports.MAX_ROW; i++) {
+    blockMatrix[i] = new Array(exports.MAX_COL);
+    for (j = 0; j < exports.MAX_COL; j++)
       blockMatrix[i][j] = new Block(j * exports.UNIT_WIDTH, i * exports.UNIT_HEIGHT);
   }
 
   // 箱子
-  boxMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    boxMatrix[i] = new Array(MAX_COL);
-    for (j = 0; j < MAX_COL; j++) {
-      boxMatrix[i][j] = 0;
+  exports.boxMatrix = new Array(exports.MAX_ROW);
+  for (i = 0; i < exports.MAX_ROW; i++) {
+    exports.boxMatrix[i] = new Array(exports.MAX_COL);
+    for (j = 0; j < exports.MAX_COL; j++) {
+      exports.boxMatrix[i][j] = 0;
     }
   }
   for (i in data.boxes) {
     let box = data.boxes[i];
     exports.boxes[box.id] = new Box(box.id, box.x, box.y);
-    boxMatrix[box.rowId][box.colId] = 1;
+    exports.boxMatrix[box.rowId][box.colId] = 1;
   }
 
   // 炸弹
-  bombMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    bombMatrix[i] = new Array(MAX_COL);
+  exports.bombMatrix = new Array(exports.MAX_ROW);
+  for (i = 0; i < exports.MAX_ROW; i++) {
+    exports.bombMatrix[i] = new Array(exports.MAX_COL);
   }
 
   // 掉落
@@ -447,7 +439,7 @@ function streamGame(data) {
   exports.players = {};
   for (i in data.players) {
     let player = data.players[i];
-    exports.players[player.id] = new Player(player.id, player.x, player.y);
+    exports.players[player.id] = new Player(player.id, player.x, player.y, player.sizeX, player.sizeY);
     console.log('created ' + player.id);
     if (player.downed == true)
       exports.players[id].downPlayer();
@@ -455,7 +447,7 @@ function streamGame(data) {
 
   // 开始游戏
   Resource.playSnd(exports.types.sound.bgm);
-  oldTs = +new Date();
+  exports.oldTs = +new Date();
   FRAME_RATE = 60;
   GAME_LOOP = setInterval(tick, 1000.0 / FRAME_RATE);
 }
@@ -501,7 +493,7 @@ function streamGame(data) {
 //     case TYPES.OP.NBOX:
 //       for (d in data) {
 //         let B = exports.boxes[data[d]];
-//         boxMatrix[B.rowId][B.colId] = 0;
+//         exports.boxMatrix[B.rowId][B.colId] = 0;
 //         delete exports.boxes[data[d]];
 //       }
 //       break;
@@ -562,16 +554,16 @@ function streamGame(data) {
 //     Resource.playSnd(TYPES.SOUND.LAY);
 //   let pos = data.pos;
 //   bombs[pos[0]] = new Bomb(pos[0], pos[1], pos[2], pos[3]);
-//   bombMatrix[bombs[pos[0]].rowId][bombs[pos[0]].colId] = pos[0];
+//   exports.bombMatrix[bombs[pos[0]].rowId][bombs[pos[0]].colId] = pos[0];
 //   bombs[pos[0]].doChain();
 // }
 //
 
 function tick() {
   let nowTs = +new Date();
-  let oldTs_ = oldTs || nowTs;
+  let oldTs_ = exports.oldTs || nowTs;
   let delta = nowTs - oldTs_;
-  oldTs = nowTs;
+  exports.oldTs = nowTs;
   update(delta);
   render();
 }
@@ -596,8 +588,8 @@ function update(delta) {
 }
 
 function render() {
-  for (i = 0; i < MAX_ROW; i++) {
-    for (j = 0; j < MAX_COL; j++) {
+  for (i = 0; i < exports.MAX_ROW; i++) {
+    for (j = 0; j < exports.MAX_COL; j++) {
       blockMatrix[i][j].render();
     }
   }

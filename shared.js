@@ -105,6 +105,8 @@ exports.MAX_ID = 131072;
 exports.MAX_QUEUE = 1024;
 exports.MAX_ROW;
 exports.MAX_COL;
+exports.WIDTH;
+exports.HEIGHT;
 exports.UNIT_WIDTH;
 exports.UNIT_HEIGHT;
 
@@ -129,10 +131,12 @@ exports.getColID = getColID;
 //  实体核心
 // =============================================================================
 class EntityState {
-  constructor(id, x, y) {
+  constructor(id, x, y, sizeX, sizeY) {
     this.id = id;
     this.x = x;
     this.y = y;
+    this.sizeX = sizeX;
+    this.sizeY = sizeY;
     this.rowId = getRowID(y);
     this.colId = getColID(x);
     this.dir = 0;
@@ -140,15 +144,16 @@ class EntityState {
 }
 exports.EntityState = EntityState;
 exports.boxes = {};
+exports.boxMatrix = {};
 
 // =============================================================================
 //  玩家核心
 // =============================================================================
 exports.PlayerState = class extends EntityState {
-  constructor(id, x, y){
-    super(id, x, y);
+  constructor(id, x, y, sizeX, sizeY){
+    super(id, x, y, sizeX, sizeY);
     this.downed = false;
-    this.speed = 0;
+    this.speed = 0.2;
   }
 
   downPlayer() {
@@ -162,16 +167,16 @@ exports.PlayerState = class extends EntityState {
     let toY = this.y;
 
     switch(dir) {
-    case types.dir.up:
+    case exports.types.dir.up:
       toY = Math.max(0, this.y - this.speed * delta);
       break;
-    case types.dir.right:
-      toX = Math.min(WIDTH - this.sizeX, this.x + this.speed * delta);
+    case exports.types.dir.right:
+      toX = Math.min(exports.WIDTH - this.sizeX, this.x + this.speed * delta);
       break;
-    case types.dir.down:
-      toY = Math.min(HEIGHT - this.sizeY, this.y + this.speed * delta);
+    case exports.types.dir.down:
+      toY = Math.min(exports.HEIGHT - this.sizeY, this.y + this.speed * delta);
       break;
-    case types.dir.left:
+    case exports.types.dir.left:
       toX = Math.max(0, this.x - this.speed * delta);
       break;
     }
@@ -179,7 +184,7 @@ exports.PlayerState = class extends EntityState {
     let toColId = getColID(toX);
     let toRowId = getRowID(toY);
     if ((toRowId != this.rowId || toColId != this.colId) &&
-        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId])) {
+        (exports.bombMatrix[toRowId][toColId] || exports.boxMatrix[toRowId][toColId])) {
       return;
     }
 
@@ -194,17 +199,17 @@ exports.PlayerState = class extends EntityState {
     let delta = input.delta;
 
     switch (key) {
-    case types.key.up:
-      this.move(delta, types.dir.up);
+    case exports.types.key.up:
+      this.move(delta, exports.types.dir.up);
       break;
-    case types.key.right:
-      this.move(delta, types.dir.right);
+    case exports.types.key.right:
+      this.move(delta, exports.types.dir.right);
       break;
-    case types.key.down:
-      this.move(delta, types.dir.down);
+    case exports.types.key.down:
+      this.move(delta, exports.types.dir.down);
       break;
-    case types.key.left:
-      this.move(delta, types.dir.left);
+    case exports.types.key.left:
+      this.move(delta, exports.types.dir.left);
       break;
     }
   }
@@ -222,11 +227,11 @@ exports.players = {};
 //   }
 //
 //   blocked(rowId, colId) {
-//     return bind(rowId, colId) && boxMatrix[rowId][colId];
+//     return bind(rowId, colId) && exports.boxMatrix[rowId][colId];
 //   }
 //
 //   doBomb() {
-//     bombMatrix[this.rowId][this.colId] = 0;
+//     exports.bombMatrix[this.rowId][this.colId] = 0;
 //     delete bombs[this.id];
 //     // [行, 列, 下一位置, 最大位置, 方向]
 //     let waveToGenerate = [
@@ -273,9 +278,9 @@ exports.players = {};
 //   }
 //
 //   tryChain(rowId, colId) {
-//     if (bind(rowId, colId) && bombMatrix[rowId][colId]) {
-//       bombs[this.id].chain.push(bombMatrix[rowId][colId]);
-//       bombs[bombMatrix[rowId][colId]].chain.push(this.id);
+//     if (bind(rowId, colId) && exports.bombMatrix[rowId][colId]) {
+//       bombs[this.id].chain.push(exports.bombMatrix[rowId][colId]);
+//       bombs[exports.bombMatrix[rowId][colId]].chain.push(this.id);
 //     }
 //   }
 //
@@ -309,7 +314,7 @@ exports.players = {};
 // }
 exports.bombs = {};
 // let bombVisit = {};
-// let bombMatrix;
+exports.bombMatrix = {};
 //
 // // =============================================================================
 // //  爆波
@@ -324,7 +329,7 @@ exports.bombs = {};
 //     this.rowId = x;
 //     this.colId = y;
 //
-//     if (boxMatrix[this.rowId][this.colId]) {
+//     if (exports.boxMatrix[this.rowId][this.colId]) {
 //       this.nextRowOrColId = this.maxRowOrColId;
 //     }
 //   }

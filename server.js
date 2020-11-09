@@ -38,6 +38,8 @@ function initGame() {
   shared.MAX_COL = 16;
   shared.UNIT_WIDTH = 50;
   shared.UNIT_HEIGHT = 50;
+  shared.WIDTH = shared.UNIT_WIDTH * shared.MAX_COL;
+  shared.HEIGHT = shared.UNIT_HEIGHT * shared.MAX_ROW;
 
   IDPool.prepID();
 
@@ -108,7 +110,7 @@ function init() {
     if (numPlayers < MAX_PLAYERS) {
       let spawnX = playerSpawns[numPlayers][0];
       let spawnY = playerSpawns[numPlayers][1];
-      shared.players[id] = new shared.PlayerState(id, spawnX, spawnY);
+      shared.players[id] = new shared.PlayerState(id, spawnX, spawnY, 96, 118);
       numPlayers++;
     }
   });
