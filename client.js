@@ -1,12 +1,12 @@
 // =============================================================================
 //  客户端
 // =============================================================================
-let pendingInputs = new exports.Queue(exports.MAX_QUEUE);
+pendingInputs = new Queue(MAX_QUEUE);
 
 // =============================================================================
 //  各种资源
 // =============================================================================
-let Resource = {};
+Resource = {};
 Resource.pngMap = {};
 Resource.sndMap = {};
 // 图片读取为异步, 等待所有图片读取后init()
@@ -96,8 +96,8 @@ class Sprite {
       this.sizeX,
       this.sizeY,
       // 画哪
-      positionX - (this.sizeDrawX - exports.UNIT_WIDTH) / 2,
-      positionY - (this.sizeDrawY - exports.UNIT_HEIGHT),
+      positionX - (this.sizeDrawX - UNIT_WIDTH) / 2,
+      positionY - (this.sizeDrawY - UNIT_HEIGHT),
       // 实际大小
       this.sizeDrawX,
       this.sizeDrawY
@@ -145,7 +145,7 @@ class Block extends Entity {
     // 魔法数字...
     this.state = new EntityState(-1, x, y, 64, 64);
     this.sprite =
-        new Sprite(exports.types.entity.block, 64, 64, exports.UNIT_WIDTH, exports.UNIT_HEIGHT);
+        new Sprite(types.entity.block, 64, 64, UNIT_WIDTH, UNIT_HEIGHT);
     this.sprite.startX =
         Math.floor(Math.random() * 5) * this.sprite.sizeX; // 0,1,2,3,4
     this.sprite.startY = 0;
@@ -153,7 +153,7 @@ class Block extends Entity {
     this.sprite.maxCycle = 1;
   }
 }
-let blockMatrix;
+var blockMatrix;
 
 // =============================================================================
 //  盒子
@@ -164,7 +164,7 @@ class Box extends Entity {
     this.state = new EntityState(id, x, y, 64, 79);
     // 魔法数字...
     this.sprite =
-      new Sprite(exports.types.entity.box, 64, 79, exports.UNIT_WIDTH, exports.UNIT_HEIGHT * 1.23);
+      new Sprite(types.entity.box, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
     this.sprite.cycleTime = -1;
     this.sprite.maxCycle = 1;
   }
@@ -179,13 +179,13 @@ class Loot extends Entity {
     this.state = new EntityState(id, x, y, 32, 48);
     // 魔法数字...
     this.sprite = new Sprite(
-        exports.types.entity.loot, 32, 48, exports.UNIT_WIDTH * 0.9375, exports.UNIT_HEIGHT * 0.9375);
+        types.entity.loot, 32, 48, UNIT_WIDTH * 0.9375, UNIT_HEIGHT * 0.9375);
     this.sprite.startX = type * this.sprite.sizeX;
     this.sprite.cycleTime = INFINITE;
     this.sprite.maxCycle = 1;
   }
 }
-let loots = {};
+loots = {};
 
 // =============================================================================
 //  玩家
@@ -193,25 +193,25 @@ let loots = {};
 class Player extends Entity {
   constructor(id, x, y, sizeX, sizeY) {
     super();
-    this.state = new exports.PlayerState(id, x, y, sizeX, sizeY);
+    this.state = new PlayerState(id, x, y, sizeX, sizeY);
     // 魔法数字...
     this.sprite = new Sprite(
-        exports.types.entity.player, sizeX, sizeY, exports.UNIT_WIDTH * 1.5, exports.UNIT_HEIGHT * 1.875);
+        types.entity.player, sizeX, sizeY, UNIT_WIDTH * 1.5, UNIT_HEIGHT * 1.875);
     this.sprite.maxCycle = 4;
     this.sprite.frameVector = [1,2,0,3];
     this.sprite.cycleTime = 170; // ms
-    this.state.dir = exports.types.dir.down;
+    this.state.dir = types.dir.down;
   }
 
   downPlayer() {
     this.state.downPlayer();
     // 魔法数字...
     this.sprite = new Sprite(
-        exports.types.entity.player_downed,
+        types.entity.player_downed,
         74,
         83,
-        exports.UNIT_WIDTH * 1.5,
-        exports.UNIT_HEIGHT * 1.875
+        UNIT_WIDTH * 1.5,
+        UNIT_HEIGHT * 1.875
     );
     this.sprite.maxCycle = 4;
     this.sprite.cycleTime = 170;
@@ -228,18 +228,18 @@ class Player extends Entity {
     }
 
     let input = {};
-    if (keyPressed[exports.types.key.up]) {
+    if (keyPressed[types.key.up]) {
       input.delta = delta;
-      input.key = exports.types.key.up;
-    } else if (keyPressed[exports.types.key.right]) {
+      input.key = types.key.up;
+    } else if (keyPressed[types.key.right]) {
       input.delta = delta;
-      input.key = exports.types.key.right;
-    } else if (keyPressed[exports.types.key.down]) {
+      input.key = types.key.right;
+    } else if (keyPressed[types.key.down]) {
       input.delta = delta;
-      input.key = exports.types.key.down;
-    } else if (keyPressed[exports.types.key.left]) {
+      input.key = types.key.down;
+    } else if (keyPressed[types.key.left]) {
       input.delta = delta;
-      input.key = exports.types.key.left;
+      input.key = types.key.left;
     }
 
     if (Object.keys(input).length !== 0) {
@@ -251,7 +251,7 @@ class Player extends Entity {
     }
   }
 }
-let localPlayerId;
+localPlayerId = "";
 
 // // =============================================================================
 // //  炸弹
@@ -260,7 +260,7 @@ let localPlayerId;
 //   constructor(id, x, y, power) {
 //     this.state = new BombState(id, x, y, power);
 //     // 魔法数字...
-//     this.sprite = new Sprite(exports.types.entity.bomb, 64, 64, 40, 40);
+//     this.sprite = new Sprite(types.entity.bomb, 64, 64, 40, 40);
 //     this.sprite.cycleTime = 170;
 //     this.sprite.maxCycle = 3;
 //   }
@@ -275,7 +275,7 @@ let localPlayerId;
 // }
 // let bombs = [];
 // let bombVisit = {};
-// let exports.bombMatrix;
+// let bombMatrix;
 //
 // // =============================================================================
 // //  爆波
@@ -286,7 +286,7 @@ let localPlayerId;
 //     this.currTime = 0;
 //     this.cycleTime = 400;
 //
-//     this.sprite = new Sprite(exports.types.CHAR.WAVE, 64, 64, 40, 40);
+//     this.sprite = new Sprite(types.CHAR.WAVE, 64, 64, 40, 40);
 //     this.sprite.startY = ((dir + 1) % 4) * this.sprite.sizeY;
 //     this.sprite.cycleTime = 250;
 //     this.sprite.maxCycle = 2;
@@ -311,11 +311,11 @@ let localPlayerId;
 //           to_spread.push([this.cs - 1, this.colId, this.cs - 1]);
 //         break;
 //       case TYPES.DIRECTION.RIGHT:
-//         if (this.cs + 1 < exports.MAX_COL && this.cs + 1 <= this.bs)
+//         if (this.cs + 1 < MAX_COL && this.cs + 1 <= this.bs)
 //           to_spread.push([this.rowId, this.cs + 1, this.cs + 1]);
 //         break;
 //       case TYPES.DIRECTION.DOWN:
-//         if (this.cs + 1 < exports.MAX_ROW && this.cs + 1 <= this.bs)
+//         if (this.cs + 1 < MAX_ROW && this.cs + 1 <= this.bs)
 //           to_spread.push([this.cs + 1, this.colId, this.cs + 1]);
 //         break;
 //       case TYPES.DIRECTION.LEFT:
@@ -339,24 +339,23 @@ let localPlayerId;
 //     }
 //   }
 // });
-// let waves = {};
+// waves = {};
 
 // =============================================================================
 //  客户端本体
 // =============================================================================
 // 画布
-let ctx;
+var ctx;
 // 预测补正
-let messageSequenceId = 0;
-let pendingQueue = new Queue(exports.MAX_QUEUE);
+messageSequenceId = 0;
 // 键输入
-let validKeys = {};
-validKeys[exports.types.key.up] = 1;
-validKeys[exports.types.key.right] = 1;
-validKeys[exports.types.key.down] = 1;
-validKeys[exports.types.key.left] = 1;
-validKeys[exports.types.key.space] = 1;
-let keyPressed = {};
+validKeys = {};
+validKeys[types.key.up] = 1;
+validKeys[types.key.right] = 1;
+validKeys[types.key.down] = 1;
+validKeys[types.key.left] = 1;
+validKeys[types.key.space] = 1;
+keyPressed = {};
 // 时间
 
 function init() {
@@ -385,71 +384,67 @@ function init() {
   });
 }
 
-function streamGame(data) {
-  // 场景维度
-  exports.MAX_ROW = data.maxRow;
-  exports.MAX_COL = data.maxCol;
-  exports.UNIT_WIDTH = data.unitWidth;
-  exports.UNIT_HEIGHT = data.unitHeight;
-  exports.WIDTH = exports.UNIT_WIDTH * exports.MAX_COL;
-  exports.HEIGHT = exports.UNIT_HEIGHT * exports.MAX_ROW;
+function clientTick() {
+  render(tick());
+}
 
+function streamGame(data) {
   let canvas = document.getElementById("canvas");
   ctx = canvas.getContext("2d");
-  canvas.width = exports.WIDTH;
-  canvas.height = exports.HEIGHT;
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
   canvas.style.position = "absolute";
 
   // 背景
-  blockMatrix = new Array(exports.MAX_ROW);
-  for (i = 0; i < exports.MAX_ROW; i++) {
-    blockMatrix[i] = new Array(exports.MAX_COL);
-    for (j = 0; j < exports.MAX_COL; j++)
-      blockMatrix[i][j] = new Block(j * exports.UNIT_WIDTH, i * exports.UNIT_HEIGHT);
+  blockMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    blockMatrix[i] = new Array(MAX_COL);
+    for (j = 0; j < MAX_COL; j++)
+      blockMatrix[i][j] = new Block(j * UNIT_WIDTH, i * UNIT_HEIGHT);
   }
 
   // 箱子
-  exports.boxMatrix = new Array(exports.MAX_ROW);
-  for (i = 0; i < exports.MAX_ROW; i++) {
-    exports.boxMatrix[i] = new Array(exports.MAX_COL);
-    for (j = 0; j < exports.MAX_COL; j++) {
-      exports.boxMatrix[i][j] = 0;
+  boxMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    boxMatrix[i] = new Array(MAX_COL);
+    for (j = 0; j < MAX_COL; j++) {
+      boxMatrix[i][j] = 0;
     }
   }
   for (i in data.boxes) {
     let box = data.boxes[i];
-    exports.boxes[box.id] = new Box(box.id, box.x, box.y);
-    exports.boxMatrix[box.rowId][box.colId] = 1;
+    boxes[box.id] = new Box(box.id, box.x, box.y);
+    boxMatrix[box.rowId][box.colId] = 1;
   }
 
   // 炸弹
-  exports.bombMatrix = new Array(exports.MAX_ROW);
-  for (i = 0; i < exports.MAX_ROW; i++) {
-    exports.bombMatrix[i] = new Array(exports.MAX_COL);
+  bombMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    bombMatrix[i] = new Array(MAX_COL);
   }
 
   // 掉落
-  exports.loots = {};
+  loots = {};
   for (i in data.loots) {
     let loot = data.loots[i];
-    exports.loots[L[0]] = new Loot(loot.id, loot.x, loot.y, loot.type);
+    loots[L[0]] = new Loot(loot.id, loot.x, loot.y, loot.type);
   }
 
   // 玩家
-  exports.players = {};
+  players = {};
   for (i in data.players) {
     let player = data.players[i];
-    exports.players[player.id] = new Player(player.id, player.x, player.y, player.sizeX, player.sizeY);
+    players[player.id] = new Player(player.id, player.x, player.y, player.sizeX, player.sizeY);
     console.log('created ' + player.id);
     if (player.downed == true)
-      exports.players[id].downPlayer();
+      players[id].downPlayer();
   }
 
   // 开始游戏
-  Resource.playSnd(exports.types.sound.bgm);
-  exports.oldTs = +new Date();
+  Resource.playSnd(types.sound.bgm);
+  oldTs = +new Date();
   FRAME_RATE = 60;
-  GAME_LOOP = setInterval(tick, 1000.0 / FRAME_RATE);
+  GAME_LOOP = setInterval(clientTick, 1000.0 / FRAME_RATE);
 }
 
 // function handleMessage(req) {
@@ -492,9 +487,9 @@ function streamGame(data) {
 //       break;
 //     case TYPES.OP.NBOX:
 //       for (d in data) {
-//         let B = exports.boxes[data[d]];
-//         exports.boxMatrix[B.rowId][B.colId] = 0;
-//         delete exports.boxes[data[d]];
+//         let B = boxes[data[d]];
+//         boxMatrix[B.rowId][B.colId] = 0;
+//         delete boxes[data[d]];
 //       }
 //       break;
 //     case TYPES.OP.LOOT:
@@ -554,70 +549,42 @@ function streamGame(data) {
 //     Resource.playSnd(TYPES.SOUND.LAY);
 //   let pos = data.pos;
 //   bombs[pos[0]] = new Bomb(pos[0], pos[1], pos[2], pos[3]);
-//   exports.bombMatrix[bombs[pos[0]].rowId][bombs[pos[0]].colId] = pos[0];
+//   bombMatrix[bombs[pos[0]].rowId][bombs[pos[0]].colId] = pos[0];
 //   bombs[pos[0]].doChain();
 // }
 //
 
-function tick() {
-  let nowTs = +new Date();
-  let oldTs_ = exports.oldTs || nowTs;
-  let delta = nowTs - oldTs_;
-  exports.oldTs = nowTs;
-  update(delta);
-  render();
-}
-
-function update(delta) {
-  // 接收网络消息
-  if (!exports.msgQueue.empty()) {
-    // handleMessage(exports.msgQueue.pop());
-  }
-  // 更新玩家
-  for (i in exports.players) { exports.players[i].update(delta); }
-  // 更新其他
-  for (i in exports.waves) { exports.waves[i].update(delta); }
-  for (i in exports.bombs) { exports.bombs[i].update(delta); }
-  for (i in exports.boxes) { exports.boxes[i].update(delta); }
-  for (i in exports.loots) { exports.loots[l].update(delta); }
-
-  // 发送网络消息, Lockstep = 20FPS
-  if (!exports.sendQueue.empty() && delta >= 50) {
-    socket.emit('opcode', {data: exports.sendQueue.pop()});
-  }
-}
-
-function render() {
-  for (i = 0; i < exports.MAX_ROW; i++) {
-    for (j = 0; j < exports.MAX_COL; j++) {
-      blockMatrix[i][j].render();
+function render(delta) {
+  for (i = 0; i < MAX_ROW; i++) {
+    for (j = 0; j < MAX_COL; j++) {
+      blockMatrix[i][j].render(delta);
     }
   }
 
-  for (i in exports.waves) { exports.waves[w].render(); }
-  for (i in exports.loots) { exports.loots[i].render(); }
-  for (i in exports.players) { exports.players[i].render(); }
-  for (i in exports.bombs) { exports.bombs[i].render(); }
-  for (i in exports.boxes) { exports.boxes[i].render(); }
+  for (i in waves) { waves[w].render(delta); }
+  for (i in loots) { loots[i].render(delta); }
+  for (i in players) { players[i].render(delta); }
+  for (i in bombs) { bombs[i].render(delta); }
+  for (i in boxes) { boxes[i].render(delta); }
 }
 
 // =============================================================================
 //  载入资源
 // =============================================================================
 Resource.loadSnds([ // [类型ID, 文件, 音量, 是否循环]
-  [        exports.types.sound.bgm,   "bg.ogg", 0.3, 1],
-  [   exports.types.sound.put_bomb,  "lay.wav",   1, 0],
-  [    exports.types.sound.explode,  "exp.wav",   1, 0],
-  [exports.types.sound.pickup_loot, "loot.wav",   1, 0]
+  [        types.sound.bgm,   "bg.ogg", 0.3, 1],
+  [   types.sound.put_bomb,  "lay.wav",   1, 0],
+  [    types.sound.explode,  "exp.wav",   1, 0],
+  [types.sound.pickup_loot, "loot.wav",   1, 0]
 ]);
 
 Resource.loadPngs([ // [类型ID, 文件]
-  [       exports.types.entity.player,   "remi.png"],
-  [         exports.types.entity.bomb,   "bomb.png"],
-  [         exports.types.entity.wave,   "wave.png"],
-  [        exports.types.entity.block,  "block.png"],
-  [          exports.types.entity.box,    "box.png"],
-  [         exports.types.entity.loot,   "loot.png"],
-  [exports.types.entity.player_downed,   "netu.png"]],
+  [       types.entity.player,   "remi.png"],
+  [         types.entity.bomb,   "bomb.png"],
+  [         types.entity.wave,   "wave.png"],
+  [        types.entity.block,  "block.png"],
+  [          types.entity.box,    "box.png"],
+  [         types.entity.loot,   "loot.png"],
+  [types.entity.player_downed,   "netu.png"]],
   init
 );
