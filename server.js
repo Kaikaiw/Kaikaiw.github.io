@@ -3,11 +3,6 @@ var E = require('./shared.js');
 // =============================================================================
 //  服务端
 // =============================================================================
-MAX_PLAYERS = 4;
-numPlayers = 0;
-FRAME_RATE = 0;
-GAME_LOOP = null;
-
 // 硬编码地图
 map = [
   [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
@@ -30,26 +25,31 @@ map = [
 
 function initGame() {
   E.prepID();
-  E.initBoxes(map);
+  E.init(map);
 
-  FRAME_RATE = 20;
-  GAME_LOOP = setInterval(E.tick, 1000.0 / FRAME_RATE);
+  setInterval(function () {
+     E.tick(E.handleClientMessage);
+     E.processSend(); 
+  }, 1000.0 / 10); // 10FPS 游戏循环
 }
 
 function init() {
   initGame();
   // 网络
-  let io = require('socket.io')(8081);
+  var io = require('socket.io')(8081);
   io.on('connection', (socket) => {
     socket.on('stream', () => {
       E.sendGameData(socket);
+
+      var id = socket.handshake.address;
+      E.spawnPlayer(id, socket);
     });
     socket.on('opcode', (msg) => {
-      // handleMessage(msg);
+      E.recvMessage(msg);
     });
-    socket.on('disconnect', () => {});
-
-    E.spawnPlayer(socket.handshake.address);
+    socket.on('disconnect', () => {
+      E.despawnPlayer(socket.handshake.address);
+    });
   });
 }
 

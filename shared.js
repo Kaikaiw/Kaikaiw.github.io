@@ -69,48 +69,18 @@ types = {
 };
 
 // =============================================================================
-//  循环队列
-// =============================================================================
-class Queue {
-  constructor(size) {
-    this.size = size + 1;
-    this.data = [this.size];
-    this.queueL = 0;
-    this.queueR = 0;
-  }
-
-  empty() {
-    return this.queueL == this.queueR;
-  }
-
-  full() {
-    return (this.queueR + 1) % this.size == this.queueL;
-  }
-
-  pop() {
-    let d = this.data[this.queueL];
-    this.queueL = (this.queueL + 1) % this.size;
-    return d;
-  }
-
-  put(d) {
-    this.data[this.queueR] = d;
-    this.queueR = (this.queueR + 1) % this.size;
-  }
-}
-
-// =============================================================================
 //  全局配置 / 坐标转换
 // =============================================================================
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131072;
-MAX_QUEUE = 1024;
 MAX_ROW = 16;
 MAX_COL = 16;
 UNIT_WIDTH = 50;
 UNIT_HEIGHT = 50;
 WIDTH = UNIT_WIDTH * MAX_COL;
 HEIGHT = UNIT_HEIGHT * MAX_ROW;
+MAX_PLAYERS = 4;
+numPlayers = 0;
 
 function bind(rowId, colId) {
   return rowId >= 0 && rowId < MAX_ROW && colId >= 0 && colId < MAX_COL;
@@ -144,7 +114,7 @@ class EntityState {
   }
 }
 boxes = {};
-boxMatrix = {};
+var boxMatrix;
 
 // =============================================================================
 //  玩家核心
@@ -153,7 +123,7 @@ class PlayerState extends EntityState {
   constructor(id, x, y, sizeX, sizeY){
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
-    this.speed = 0.2;
+    this.speed = 0.20;
   }
 
   downPlayer() {
@@ -163,26 +133,26 @@ class PlayerState extends EntityState {
 
   move(delta, dir) {
     this.dir = dir;
-    let toX = this.x;
-    let toY = this.y;
+    var toX = this.x;
+    var toY = this.y;
 
     switch(dir) {
     case types.dir.up:
       toY = Math.max(0, this.y - this.speed * delta);
       break;
     case types.dir.right:
-      toX = Math.min(WIDTH - this.sizeX, this.x + this.speed * delta);
+      toX = Math.min(WIDTH - this.sizeX / 2, this.x + this.speed * delta);
       break;
     case types.dir.down:
-      toY = Math.min(HEIGHT - this.sizeY, this.y + this.speed * delta);
+      toY = Math.min(HEIGHT - this.sizeY / 3, this.y + this.speed * delta);
       break;
     case types.dir.left:
       toX = Math.max(0, this.x - this.speed * delta);
       break;
     }
 
-    let toColId = getColID(toX);
-    let toRowId = getRowID(toY);
+    var toColId = getColID(toX);
+    var toRowId = getRowID(toY);
     if ((toRowId != this.rowId || toColId != this.colId) &&
         (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId])) {
       return;
@@ -195,8 +165,12 @@ class PlayerState extends EntityState {
   }
 
   applyInput(input) {
-    let key = input.key;
-    let delta = input.delta;
+    var key = input.key;
+    var delta = input.delta;
+
+    if (delta > 50) { // Anti-cheat
+      return;
+    }
 
     switch (key) {
     case types.key.up:
@@ -234,7 +208,7 @@ players = {};
 //     bombMatrix[this.rowId][this.colId] = 0;
 //     delete bombs[this.id];
 //     // [行, 列, 下一位置, 最大位置, 方向]
-//     let waveToGenerate = [
+//     var waveToGenerate = [
 //       [this.rowId, this.colId, 0, 0, 0],
 //       [this.rowId - 1, this.colId, this.rowId - 1,
 //        this.rowId - this.power,
@@ -251,13 +225,13 @@ players = {};
 //     ];
 //
 //     for (i in waveToGenerate) {
-//       let rowId = waveToGenerate[i][0];
-//       let colId = waveToGenerate[i][1];
-//       let nextRowOrColId = waveToGenerate[i][2];
-//       let maxRowOrColId = waveToGenerate[i][3];
-//       let dir = waveToGenerate[i][4];
+//       var rowId = waveToGenerate[i][0];
+//       var colId = waveToGenerate[i][1];
+//       var nextRowOrColId = waveToGenerate[i][2];
+//       var maxRowOrColId = waveToGenerate[i][3];
+//       var dir = waveToGenerate[i][4];
 //       if (bind(rowId, colId)) {
-//         let id = IDPool.getID();
+//         var id = IDPool.getID();
 //         waves[id] = new WaveState(
 //             id, rowId, colId, dir, nextRowOrColId, maxRowOrColId);
 //       }
@@ -340,43 +314,91 @@ waves = {};
 // =============================================================================
 //  网络
 // =============================================================================
-msgQueue = new Queue(MAX_QUEUE);
-sendQueue = new Queue(MAX_QUEUE);
-oldNetTs = 0;
+msgQueue = [];
+sendQueue = [];
+clients = {};
+
+function sendMessage(msg) {
+  sendQueue.push(msg);
+}
+
+function recvMessage(msg) {
+  msgQueue.push(msg);
+}
 
 // =============================================================================
 //  UTIL
 // =============================================================================
 oldTs = 0;
-idQueue = new Queue(MAX_ID);
+idQueue = [];
 
 function prepID() {
   for (i = 0; i < MAX_ID; i++) {
-    idQueue.put(i);
+    idQueue.push(i);
   }
 }
 function getID() {
-  return idQueue.pop();
+  return idQueue.shift();
 }
 function releaseID(id) {
-  idQueue.put(id);
+  idQueue.push(id);
 }
 
-function initBoxes(map) {
+function init(map) {
   for (i = 0; i < MAX_ROW; i++) {
     for (j = 0; j < MAX_COL; j++) {
       if (map[i][j] == 1) {
-        let id = getID();
+        var id = getID();
         boxes[id] = new EntityState(id, i * UNIT_WIDTH, j * UNIT_HEIGHT);
       }
     }
   }
+
+  // 箱子
+  boxMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    boxMatrix[i] = new Array(MAX_COL);
+    for (j = 0; j < MAX_COL; j++) {
+      boxMatrix[i][j] = map[i][j];
+    }
+  }
+
+  // 炸弹
+  bombMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    bombMatrix[i] = new Array(MAX_COL);
+  }
 }
 
-function update(delta) {
+function handleClientMessage(msg) {
+  switch (msg.opcode) {
+  case types.opcode.move:
+    var id = msg.id;
+
+    var player = players[id];
+    player.applyInput(msg.input);
+
+    sendMessage({
+      'to': id,
+      'data': {
+        'opcode': types.opcode.move,
+        'ackSeqId': msg.input.seqId,
+        'id': id,
+        'x': player.x,
+        'y': player.y,
+        'dir': player.dir,
+      }
+    });
+  break;
+  }
+}
+
+function update(delta, callback) {
   // 接收网络消息
-  if (!msgQueue.empty()) {
-    handleMessage(msgQueue.pop());
+  var ctr = 0;
+  while (msgQueue.length > 0 && ctr < 10) {
+    callback(msgQueue.shift()); // handleClientMessage
+    ctr++;
   }
 
   // 更新玩家
@@ -385,19 +407,21 @@ function update(delta) {
   for (i in waves) { waves[i].update(delta); }
   for (i in bombs) { bombs[i].update(delta); }
   for (i in boxes) { boxes[i].update(delta); }
+}
 
-  // 发送网络消息, Lockstep = 20FPS
-  if (!sendQueue.empty() && delta >= 50) {
-    socket.emit('opcode', {data: sendQueue.pop()});
+function processSend() {
+  while (sendQueue.length > 0) {
+    var msg = sendQueue.shift();
+    clients[msg.to].emit('opcode', msg.data);
   }
 }
 
-function tick() {
-  let nowTs = +new Date();
-  let oldTs_ = oldTs || nowTs;
-  let delta = nowTs - oldTs_;
+function tick(callback) {
+  var nowTs = +new Date();
+  var oldTs_ = oldTs || nowTs;
+  var delta = nowTs - oldTs_;
   oldTs = nowTs;
-  update(delta);
+  update(delta, callback);
 
   return delta;
 }
@@ -410,28 +434,64 @@ function sendGameData(socket) {
 }
 
 playerSpawns = [
+  [0, UNIT_HEIGHT * (MAX_ROW - 1)],
   [0, 0],
   [UNIT_WIDTH * (MAX_COL - 1), 0],
-  [0, UNIT_HEIGHT * (MAX_ROW - 1)],
   [UNIT_WIDTH * (MAX_COL - 1), UNIT_HEIGHT * (MAX_ROW - 1)]
 ];
 
-function spawnPlayer(id) {
-  if (id in players) {
-    return 0;
+function spawnPlayer(id, socket) {
+  clients[id] = socket;
+
+  if (!(id in players) && numPlayers < MAX_PLAYERS) {
+    var spawnX = playerSpawns[numPlayers][0];
+    var spawnY = playerSpawns[numPlayers][1];
+    var player = new PlayerState(id, spawnX, spawnY, 96, 118);
+    numPlayers++;
+
+    // 广播新玩家状态
+    for (id in players) {
+      sendMessage({
+        'to': id,
+        'data': {
+          'opcode': types.opcode.new_player,
+          'player': players[id],
+        }
+      });
+    }
+
+    players[id] = player;
   }
 
-  console.log(id);
-
-  if (numPlayers < MAX_PLAYERS) {
-    let spawnX = playerSpawns[numPlayers][0];
-    let spawnY = playerSpawns[numPlayers][1];
-    players[id] = new PlayerState(id, spawnX, spawnY, 96, 118);
-  }
-
-  return 1;
+  sendMessage({
+    'to': id,
+    'data': {
+      'opcode': types.opcode.new_player_local,
+      'player': players[id],
+    }
+  });
 }
 
+function despawnPlayer(id) {
+  delete players[id];
+  delete clients[id];
+
+  numPlayers--;
+  if (numPlayers < 0) {
+    numPlayers = 0;
+  }
+
+  // 广播玩家离线
+  for (otherId in players) {
+    sendMessage({
+      'to': otherId,
+      'data': {
+        'opcode': types.opcode.offline,
+        'id': id,
+      }
+    });
+  }
+}
 
 // =============================================================================
 //  SERVER EXPORTS
@@ -439,7 +499,6 @@ function spawnPlayer(id) {
 E.types = types;
 E.INFINITE = INFINITE;
 E.MAX_ID = MAX_ID;
-E.MAX_QUEUE = MAX_QUEUE;
 E.MAX_ROW = MAX_ROW;
 E.MAX_COL = MAX_COL;
 E.WIDTH = WIDTH;
@@ -449,8 +508,13 @@ E.UNIT_HEIGHT = UNIT_HEIGHT;
 E.prepID = prepID;
 E.getID = getID;
 E.releaseID = releaseID;
-E.initBoxes = initBoxes;
+E.init = init;
 E.update = update;
 E.tick = tick;
 E.sendGameData = sendGameData;
 E.spawnPlayer = spawnPlayer;
+E.despawnPlayer = despawnPlayer;
+E.sendMessage = sendMessage;
+E.recvMessage = recvMessage;
+E.processSend = processSend;
+E.handleClientMessage = handleClientMessage;
