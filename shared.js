@@ -60,7 +60,6 @@ types = {
     loot:              8,
     delete_loot:       9,
     apply_loot:       10,
-    offline:          11,
     new_player:       12,
     new_player_local: 13,
     move:             14,
@@ -448,21 +447,27 @@ function spawnPlayer(id, socket) {
     var spawnY = playerSpawns[numPlayers][1];
     var player = new PlayerState(id, spawnX, spawnY, 96, 118);
     numPlayers++;
-
-    // 广播新玩家状态
-    for (id in players) {
-      sendMessage({
-        'to': id,
-        'data': {
-          'opcode': types.opcode.new_player,
-          'player': players[id],
-        }
-      });
-    }
-
     players[id] = player;
   }
 
+
+  // 广播新玩家状态
+  for (otherId in players) {
+    if (otherId == id) {
+      continue;
+    }
+
+    console.log('其他', otherId);
+    sendMessage({
+      'to': otherId,
+      'data': {
+        'opcode': types.opcode.new_player,
+        'player': players[id],
+      }
+    });
+  }
+
+  console.log('本地', id);
   sendMessage({
     'to': id,
     'data': {
@@ -470,27 +475,6 @@ function spawnPlayer(id, socket) {
       'player': players[id],
     }
   });
-}
-
-function despawnPlayer(id) {
-  delete players[id];
-  delete clients[id];
-
-  numPlayers--;
-  if (numPlayers < 0) {
-    numPlayers = 0;
-  }
-
-  // 广播玩家离线
-  for (otherId in players) {
-    sendMessage({
-      'to': otherId,
-      'data': {
-        'opcode': types.opcode.offline,
-        'id': id,
-      }
-    });
-  }
 }
 
 // =============================================================================
@@ -513,7 +497,6 @@ E.update = update;
 E.tick = tick;
 E.sendGameData = sendGameData;
 E.spawnPlayer = spawnPlayer;
-E.despawnPlayer = despawnPlayer;
 E.sendMessage = sendMessage;
 E.recvMessage = recvMessage;
 E.processSend = processSend;

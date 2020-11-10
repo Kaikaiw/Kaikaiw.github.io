@@ -41,14 +41,11 @@ function init() {
     socket.on('stream', () => {
       E.sendGameData(socket);
 
-      var id = socket.handshake.address;
+      var id = socket.request.connection.remoteAddress;
       E.spawnPlayer(id, socket);
     });
     socket.on('opcode', (msg) => {
       E.recvMessage(msg);
-    });
-    socket.on('disconnect', () => {
-      E.despawnPlayer(socket.handshake.address);
     });
   });
 }

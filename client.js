@@ -447,9 +447,6 @@ function handleMessage(msg) {
         players[localPlayerId].speed = player.speed;
       }
     break;
-    case types.opcode.offline:
-      delete players[msg.id];
-    break;
   }
     // var packet = req.data[p];
     // var op = packet.op;
