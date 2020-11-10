@@ -3,7 +3,6 @@
 // =============================================================================
 inputSeqId = 0;
 pendingInputs = [] // 预测后输入重建
-stateBuffer = []   // 插值其他玩家状态
 
 // =============================================================================
 //  各种资源
@@ -134,6 +133,7 @@ class Entity {
 
   update(delta) {
     this.sprite.update(delta);
+    this.state.update(delta);
   }
 }
 
@@ -224,6 +224,7 @@ class Player extends Entity {
 
   update(delta) {
     super.update(delta);
+
     if (!this.state.downed) {
       this.sprite.updateDir(this.state.dir);
     }
@@ -416,8 +417,9 @@ function handleMessage(msg) {
       var id = msg.id;
       var player = players[id];
 
-      setPlayerPosition(player, msg.x, msg.y, msg.dir);
       if (id === localPlayerId) {
+        setPlayerPosition(player, msg.x, msg.y, msg.dir);
+
         var i = 0;
         while (i < pendingInputs.length) {
           var pendingInput = pendingInputs[i];
@@ -429,7 +431,8 @@ function handleMessage(msg) {
           }
         }
       } else {
-        // 其他玩家的移动插值
+        player.state.dir = msg.dir;
+        player.state.buffer.push({'ts': +new Date(), 'x': msg.x, 'y': msg.y,});
       }
     break;
     case types.opcode.new_player:
@@ -491,6 +494,10 @@ function handleMessage(msg) {
     //     players[data[p]].doNetrual();
     //   break;
     // }
+}
+
+function serverBroadCast() {
+  // pass
 }
 
 function clientProcessSend() {
@@ -556,7 +563,7 @@ function streamGame(data) {
   Resource.playSnd(types.sound.bgm);
   oldTs = +new Date();
   setInterval(function () {
-    render(tick(handleMessage));
+    render(tick(handleMessage, serverBroadCast));
     clientProcessSend();
   }, 1000.0 / 60); // 60FPS 游戏循环
 }

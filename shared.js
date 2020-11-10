@@ -108,7 +108,7 @@ class EntityState {
     this.dir = 0;
   }
 
-  update() {
+  update(delta) {
     // pass..
   }
 }
@@ -123,6 +123,8 @@ class PlayerState extends EntityState {
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
     this.speed = 0.20;
+    this.buffer = [];  // 插值玩家状态
+    this.ackSeqId = 0; // 重建序列ID
   }
 
   downPlayer() {
@@ -161,6 +163,28 @@ class PlayerState extends EntityState {
     this.y = toY;
     this.rowId = toRowId;
     this.colId = toColId;
+  }
+
+  update(delta) {
+    var renderTs = +new Date() - 1000.0 / 5; // 服务器 5FPS
+
+    while (this.buffer.length >= 2 && this.buffer[1].ts <= renderTs) {
+      this.buffer.shift();
+    }
+
+    if (this.buffer.length >= 2 &&
+        this.buffer[0].ts <= renderTs &&
+        renderTs <= this.buffer[1].ts) {
+      var x0 = this.buffer[0].x;
+      var x1 = this.buffer[1].x;
+      var y0 = this.buffer[0].y;
+      var y1 = this.buffer[1].y;
+      var t0 = this.buffer[0].ts;
+      var t1 = this.buffer[1].ts;
+
+      this.x = x0 + (x1 - x0) * (renderTs - t0) / (t1 - t0);
+      this.y = y0 + (y1 - y0) * (renderTs - t0) / (t1 - t0);
+    }
   }
 
   applyInput(input) {
@@ -376,28 +400,34 @@ function handleClientMessage(msg) {
 
     var player = players[id];
     player.applyInput(msg.input);
-
-    sendMessage({
-      'to': id,
-      'data': {
-        'opcode': types.opcode.move,
-        'ackSeqId': msg.input.seqId,
-        'id': id,
-        'x': player.x,
-        'y': player.y,
-        'dir': player.dir,
-      }
-    });
+    player.ackSeqId = msg.input.seqId;
   break;
   }
 }
 
-function update(delta, callback) {
+function broadcastState() {
+  for (id in players) {
+    for (otherId in players) {
+      let player = players[otherId];
+      sendMessage({
+        'to': id,
+        'data': {
+          'opcode': types.opcode.move,
+          'id': otherId,
+          'ackSeqId': player.ackSeqId,
+          'x': player.x,
+          'y': player.y,
+          'dir': player.dir,
+        }
+      });
+    }
+  }
+}
+
+function update(delta, callback, broadcast) {
   // 接收网络消息
-  var ctr = 0;
-  while (msgQueue.length > 0 && ctr < 10) {
+  while (msgQueue.length > 0) {
     callback(msgQueue.shift()); // handleClientMessage
-    ctr++;
   }
 
   // 更新玩家
@@ -406,6 +436,8 @@ function update(delta, callback) {
   for (i in waves) { waves[i].update(delta); }
   for (i in bombs) { bombs[i].update(delta); }
   for (i in boxes) { boxes[i].update(delta); }
+
+  broadcast();
 }
 
 function processSend() {
@@ -415,12 +447,12 @@ function processSend() {
   }
 }
 
-function tick(callback) {
+function tick(callback, broadcast) {
   var nowTs = +new Date();
   var oldTs_ = oldTs || nowTs;
   var delta = nowTs - oldTs_;
   oldTs = nowTs;
-  update(delta, callback);
+  update(delta, callback, broadcast);
 
   return delta;
 }
@@ -457,7 +489,6 @@ function spawnPlayer(id, socket) {
       continue;
     }
 
-    console.log('其他', otherId);
     sendMessage({
       'to': otherId,
       'data': {
@@ -467,7 +498,6 @@ function spawnPlayer(id, socket) {
     });
   }
 
-  console.log('本地', id);
   sendMessage({
     'to': id,
     'data': {
@@ -501,3 +531,4 @@ E.sendMessage = sendMessage;
 E.recvMessage = recvMessage;
 E.processSend = processSend;
 E.handleClientMessage = handleClientMessage;
+E.broadcastState = broadcastState;

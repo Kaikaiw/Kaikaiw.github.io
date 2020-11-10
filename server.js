@@ -28,9 +28,9 @@ function initGame() {
   E.init(map);
 
   setInterval(function () {
-     E.tick(E.handleClientMessage);
+     E.tick(E.handleClientMessage, E.broadcastState);
      E.processSend(); 
-  }, 1000.0 / 10); // 10FPS 游戏循环
+  }, 1000.0 / 5); // 5FPS 游戏循环
 }
 
 function init() {
