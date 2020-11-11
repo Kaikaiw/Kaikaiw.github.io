@@ -271,12 +271,8 @@ class PlayerState extends EntityState {
   update(delta) {
     var renderTs = +new Date() - 1000.0 / SERVER_FRAME;
 
-    while (this.buffer.length() >= 2) {
-      if (this.buffer.peekSecond().ts <= renderTs) {
-        this.buffer.shift();
-      } else {
-        break;
-      }
+    while (this.buffer.length() >= 2 && this.buffer.peekSecond().ts <= renderTs) {
+      this.buffer.shift();
     }
 
     if (this.buffer.length() >= 2) {
