@@ -309,7 +309,7 @@ class PlayerState extends EntityState {
     var key = input.key;
     var delta = input.delta;
 
-    if (delta > 20) { // Anti-cheat
+    if (delta > 20 || delta <= 0) { // Anti-cheat
       return;
     }
 
