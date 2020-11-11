@@ -105,7 +105,9 @@ class Sprite {
   }
 
   updateDir(dir) {
-    this.startY = this.sizeY * this.frameVector[dir];
+    if (this.frameVector.length) {
+      this.startY = this.sizeY * this.frameVector[dir];
+    }
   }
 
   update(delta) {
@@ -162,8 +164,8 @@ var blockMatrix;
 class Box extends Entity {
   constructor(id, x, y) {
     super();
-    this.state = new EntityState(id, x, y, 64, 79);
     // 魔法数字...
+    this.state = new EntityState(id, x, y, 64, 79);
     this.sprite =
       new Sprite(types.entity.box, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
     this.sprite.cycleTime = -1;
@@ -177,8 +179,8 @@ class Box extends Entity {
 class Loot extends Entity {
   constructor(id, x, y, type) {
     super();
-    this.state = new EntityState(id, x, y, 32, 48);
     // 魔法数字...
+    this.state = new EntityState(id, x, y, 48, 48);
     this.sprite = new Sprite(
         types.entity.loot, 32, 48, UNIT_WIDTH * 0.9375, UNIT_HEIGHT * 0.9375);
     this.sprite.startX = type * this.sprite.sizeX;
@@ -202,6 +204,7 @@ class Player extends Entity {
     this.sprite.frameVector = [1,2,0,3];
     this.sprite.cycleTime = 170; // ms
     this.state.dir = types.dir.down;
+    this.spacePressed = false;
   }
 
   downPlayer() {
@@ -248,13 +251,21 @@ class Player extends Entity {
       input.key = types.key.left;
     }
 
-    if (Object.keys(input).length != 0) {
+    var shouldProcessSpace = !this.spacePressed && keyPressed[types.key.space];
+    this.spacePressed = keyPressed[types.key.space];
+    if (shouldProcessSpace) {
+      sendMessage({
+        'opcode': types.opcode.put_bomb,
+      });
+      Resource.playSnd(types.sound.put_bomb);
+    }
+
+    if (Object.keys(input).length != 0 && !shouldProcessSpace) {
       this.applyInput(input);
 
       input.seqId = inputSeqId++;
       sendMessage({
         'opcode': types.opcode.move,
-        'id': localPlayerId,
         'input': input,
       });
 
@@ -264,93 +275,47 @@ class Player extends Entity {
 }
 localPlayerId = "";
 
-// // =============================================================================
-// //  炸弹
-// // =============================================================================
-// class Bomb extends Entity {
-//   constructor(id, x, y, power) {
-//     this.state = new BombState(id, x, y, power);
-//     // 魔法数字...
-//     this.sprite = new Sprite(types.entity.bomb, 64, 64, 40, 40);
-//     this.sprite.cycleTime = 170;
-//     this.sprite.maxCycle = 3;
-//   }
-//
-//   doChain() {
-//     this.state.doChain();
-//   }
-//
-//   chainBomb() {
-//     this.state.chainBomb();
-//   }
-// }
-// var bombs = [];
-// var bombVisit = {};
-// var bombMatrix;
-//
-// // =============================================================================
-// //  爆波
-// // =============================================================================
-// class Wave extends Entity {
-//   constructor(id, x, y, dir, nextRowOrColId, maxRowOrColId) {
-//     this.state = (id, x, y, dir, nextRowOrColId, maxRowOrColId);
-//     this.currTime = 0;
-//     this.cycleTime = 400;
-//
-//     this.sprite = new Sprite(types.CHAR.WAVE, 64, 64, 40, 40);
-//     this.sprite.startY = ((dir + 1) % 4) * this.sprite.sizeY;
-//     this.sprite.cycleTime = 250;
-//     this.sprite.maxCycle = 2;
-//   }
-//
-//   update(delta) {
-//
-//   }
-// }
-// var Wave = Entity.extend({
-//   update: function(dt) {
-//     this._super(dt);
-//
-//     this.currTime += dt;
-//     if (this.currTime >= this.spread_time) {
-//       this.spread_time = INFINITE;
-//       var to_spread = [];
-//
-//       switch(this.dir) {
-//       case TYPES.DIRECTION.UP:
-//         if (this.cs - 1 >= Math.max(0, this.bs))
-//           to_spread.push([this.cs - 1, this.colId, this.cs - 1]);
-//         break;
-//       case TYPES.DIRECTION.RIGHT:
-//         if (this.cs + 1 < MAX_COL && this.cs + 1 <= this.bs)
-//           to_spread.push([this.rowId, this.cs + 1, this.cs + 1]);
-//         break;
-//       case TYPES.DIRECTION.DOWN:
-//         if (this.cs + 1 < MAX_ROW && this.cs + 1 <= this.bs)
-//           to_spread.push([this.cs + 1, this.colId, this.cs + 1]);
-//         break;
-//       case TYPES.DIRECTION.LEFT:
-//         if (this.cs - 1 >= Math.max(0, this.bs))
-//           to_spread.push([this.rowId, this.cs - 1, this.cs - 1]);
-//         break;
-//       }
-//     }
-//
-//     for (ts in to_spread) {
-//       var x = to_spread[ts][0];
-//       var y = to_spread[ts][1];
-//       var z = to_spread[ts][2];
-//       var wid = Resource.getID();
-//       waves[wid] = new Wave(wid, x, y, this.dir, z, this.bs);
-//     }
-//
-//     if (this.currTime >= this.cycleTime) {
-//       Resource.releaseID(this.id);
-//       delete waves[this.id];
-//     }
-//   }
-// });
-// waves = {};
+// =============================================================================
+//  炸弹
+// =============================================================================
+class Bomb extends Entity {
+  constructor(id, x, y) {
+    super();
+    // 魔法数字...
+    this.sprite = new Sprite(types.entity.bomb, 64, 64, 64, 64);
+    this.sprite.cycleTime = 150;
+    this.sprite.maxCycle = 3;
+    this.state = new BombState(id, x, y, 0);
+    this.state.x = this.state.colId * UNIT_WIDTH;
+    this.state.y = this.state.rowId * UNIT_HEIGHT;
+  }
+
+  update(delta) {
+    this.sprite.update(delta);
+    // pass...
+  }
+}
+
+// =============================================================================
+//  爆波
+// =============================================================================
+class Wave extends Entity {
+  constructor(id, rowId, colId, dir) {
+    super();
+    // 魔法数字...
+    this.sprite = new Sprite(types.entity.wave, 64, 64, 50, 50);
+    this.sprite.startY = ((dir + 1) % 4) * this.sprite.sizeY;
+    this.sprite.cycleTime = 250;
+    this.sprite.maxCycle = 2;
+    this.state = new WaveState(id, rowId, colId, 0, 0);
+    this.state.x = this.state.colId * UNIT_WIDTH;
+    this.state.y = this.state.rowId * UNIT_HEIGHT;
+  }
+
+  update(delta) {
+    this.sprite.update(delta);
+  }
+}
 
 // =============================================================================
 //  客户端本体
@@ -383,13 +348,13 @@ function init() {
   });
 
   // websocket
-  var socket = io("192.168.8.191:8081");
+  var socket = io("ws://192.168.8.191:8081");
   socket.on('connect', function(data) {
     socket.emit('stream');
   });
   socket.on('stream', streamGame);
   socket.on('opcode', function(msg) {
-    recvMessage(msg);
+    recvMessage('server', msg);
   });
   server = socket;
 }
@@ -402,16 +367,10 @@ function setPlayerPosition(player, x, y, dir) {
   player.state.colId = getColID(x);
 }
 
-// function setBomb(data) {
-//   if (data.id == localPlayerId)
-//     Resource.playSnd(TYPES.SOUND.LAY);
-//   var pos = data.pos;
-//   bombs[pos[0]] = new Bomb(pos[0], pos[1], pos[2], pos[3]);
-//   bombMatrix[bombs[pos[0]].rowId][bombs[pos[0]].colId] = pos[0];
-//   bombs[pos[0]].doChain();
-// }
+function handleMessage(data) {
+  var id = data.id;
+  var msg = data.msg;
 
-function handleMessage(msg) {
   switch (msg.opcode) {
     case types.opcode.move:
       var id = msg.id;
@@ -450,20 +409,40 @@ function handleMessage(msg) {
         players[localPlayerId].speed = player.speed;
       }
     break;
+    case types.opcode.bomb:
+      for (id in bombs) {
+        if (!(id in msg.bombs)) {
+          bombMatrix[bombs[id].state.rowId][bombs[id].state.colId] = 0;
+          delete bombs[id];
+          Resource.playSnd(types.sound.explode);
+        }
+      }
+      for (id in msg.bombs) {
+        if (!(id in bombs)) {
+          var bomb = new Bomb(id, msg.bombs[id].x, msg.bombs[id].y);
+          bombs[id] = bomb;
+        }
+      }
+    break;
+    case types.opcode.wave:
+      for (id in waves) {
+        if (!(id in msg.waves)) {
+          delete waves[id];
+        }
+      }
+      for (id in msg.waves) {
+        if (!(id in waves)) {
+          var wave = 
+            new Wave(id, msg.waves[id].rowId, msg.waves[id].colId, msg.waves[id].dir);
+          waves[id] = wave;
+        }
+      }
+    break;
   }
     // var packet = req.data[p];
     // var op = packet.op;
     // var data = packet.data;
     // switch (op) {
-    // case TYPES.OP.LAY:
-    //   for (b in data)
-    //     setBomb(data[b]);
-    //   break;
-    // case TYPES.OP.CBOMB:
-    //   Resource.playSnd(TYPES.SOUND.EXP);
-    //   bomb_visit = {};
-    //   bombs[data.id].chainBomb(bombs[data.id]);
-    //   break;
     // case TYPES.OP.NBOX:
     //   for (d in data) {
     //     var B = boxes[data[d]];
@@ -485,13 +464,6 @@ function handleMessage(msg) {
     // case TYPES.OP.GLOOT:
     //   Resource.playSnd(TYPES.SOUND.LOOT);
     //   players[localPlayerId].speed = data.speed;
-    //   break;
-    // case TYPES.OP.OFF:
-    //   delete players[data.id];
-    //   break;
-    // case TYPES.OP.NETR:
-    //   for (p in data)
-    //     players[data[p]].doNetrual();
     //   break;
     // }
 }
@@ -541,13 +513,6 @@ function streamGame(data) {
     bombMatrix[i] = new Array(MAX_COL);
   }
 
-  // 掉落
-  loots = {};
-  for (i in data.loots) {
-    var loot = data.loots[i];
-    loots[L[0]] = new Loot(loot.id, loot.x, loot.y, loot.type);
-  }
-
   // 玩家
   players = {};
   for (i in data.players) {
@@ -575,10 +540,10 @@ function render(delta) {
     }
   }
 
-  for (i in waves) { waves[w].render(delta); }
   for (i in loots) { loots[i].render(delta); }
-  for (i in players) { players[i].render(delta); }
   for (i in bombs) { bombs[i].render(delta); }
+  for (i in waves) { waves[i].render(delta); }
+  for (i in players) { players[i].render(delta); }
   for (i in boxes) { boxes[i].render(delta); }
 }
 

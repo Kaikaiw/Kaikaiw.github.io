@@ -53,7 +53,6 @@ types = {
     key_down:          0,
     key_up:            1,
     put_bomb:          2,
-    chain_bomb:        3,
     explode:           4,
     wave:              5,
     delete_box:        7,
@@ -63,13 +62,14 @@ types = {
     new_player:       12,
     new_player_local: 13,
     move:             14,
-    player_downed:    15
+    bomb:             15,
   }
 };
 
 // =============================================================================
 //  全局配置 / 坐标转换
 // =============================================================================
+SERVER_FRAME = 10;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131072;
 MAX_ROW = 16;
@@ -109,7 +109,7 @@ class EntityState {
   }
 
   update(delta) {
-    // pass..
+    // pass...
   }
 }
 boxes = {};
@@ -123,6 +123,9 @@ class PlayerState extends EntityState {
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
     this.speed = 0.20;
+    this.power = 3;
+    this.currentBombNumber = 0;
+    this.maxBombNumber = 1;
     this.buffer = [];  // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
   }
@@ -165,8 +168,23 @@ class PlayerState extends EntityState {
     this.colId = toColId;
   }
 
+  putBomb() {
+    if (bombMatrix[this.rowId][this.colId] || boxMatrix[this.rowId][this.colId]) {
+      return;
+    }
+
+    if (this.currentBombNumber >= this.maxBombNumber) {
+      return;
+    }
+
+    var id = getID();
+    var bomb = new BombState(id, this.x, this.y, this.power);
+    bombs[id] = bomb;
+    bomb.doChain();
+  }
+
   update(delta) {
-    var renderTs = +new Date() - 1000.0 / 5; // 服务器 5FPS
+    var renderTs = +new Date() - 1000.0 / SERVER_FRAME;
 
     while (this.buffer.length >= 2 && this.buffer[1].ts <= renderTs) {
       this.buffer.shift();
@@ -213,124 +231,162 @@ class PlayerState extends EntityState {
 }
 players = {};
 
-// // =============================================================================
-// //  炸弹核心
-// // =============================================================================
-// class BombState extends EntityState {
-//   constructor(id, x, y, power) {
-//     super(id, x, y);
-//     this.chain = [];
-//     this.power = power;
-//   }
-//
-//   blocked(rowId, colId) {
-//     return bind(rowId, colId) && boxMatrix[rowId][colId];
-//   }
-//
-//   doBomb() {
-//     bombMatrix[this.rowId][this.colId] = 0;
-//     delete bombs[this.id];
-//     // [行, 列, 下一位置, 最大位置, 方向]
-//     var waveToGenerate = [
-//       [this.rowId, this.colId, 0, 0, 0],
-//       [this.rowId - 1, this.colId, this.rowId - 1,
-//        this.rowId - this.power,
-//        TYPES.DIRECTION.UP],
-//       [this.rowId, this.colId + 1, this.colId + 1,
-//        this.colId + this.power,
-//        TYPES.DIRECTION.RIGHT],
-//       [this.rowId + 1, this.colId, this.rowId + 1,
-//        this.rowId + this.power,
-//        TYPES.DIRECTION.DOWN],
-//       [this.rowId, this.colId - 1, this.colId - 1,
-//        this.colId - this.power,
-//        TYPES.DIRECTION.LEFT]
-//     ];
-//
-//     for (i in waveToGenerate) {
-//       var rowId = waveToGenerate[i][0];
-//       var colId = waveToGenerate[i][1];
-//       var nextRowOrColId = waveToGenerate[i][2];
-//       var maxRowOrColId = waveToGenerate[i][3];
-//       var dir = waveToGenerate[i][4];
-//       if (bind(rowId, colId)) {
-//         var id = IDPool.getID();
-//         waves[id] = new WaveState(
-//             id, rowId, colId, dir, nextRowOrColId, maxRowOrColId);
-//       }
-//     }
-//   }
-//
-//   // 链爆
-//   chainBomb(currentBomb) {
-//     bombVisited[currentBomb.id] = 1;
-//     currentBomb.doBomb();
-//     for (bomb in currentBomb.chain) {
-//       if (bombVisited[currentBomb.chain[bomb]]) {
-//         continue;
-//       }
-//       bombVisited[cb.chain[b]] = 1;
-//       this.chainBomb(bombs[cb.chain[b]]);
-//     }
-//   }
-//
-//   tryChain(rowId, colId) {
-//     if (bind(rowId, colId) && bombMatrix[rowId][colId]) {
-//       bombs[this.id].chain.push(bombMatrix[rowId][colId]);
-//       bombs[bombMatrix[rowId][colId]].chain.push(this.id);
-//     }
-//   }
-//
-//   // 放置炸弹时, 尝试链接其他炸弹, 达到链爆效果
-//   doChain() {
-//     // 向下链接
-//     for (i = this.rowId + 1;
-//          bind(i, this.colId) &&
-//          !this.blocked(i, this.colId) && i <= this.rowId + this.power; i++) {
-//       tryChain(i, this.colId);
-//     }
-//     // 向上链接
-//     for (i = this.rowId - 1;
-//          bind(i, this.colId) &&
-//          !this.blocked(i, this.colId) && i >= this.rowId - this.power; i--) {
-//       tryChain(i, this.colId);
-//     }
-//     // 向右链接
-//     for (j = this.colId + 1;
-//          bind(this.rowId, j) &&
-//          !this.blocked(this.rowId, j) && j <= this.colId + this.power; j++) {
-//       tryChain(this.rowId, j);
-//     }
-//     // 向左链接
-//     for (j = this.colId - 1;
-//          bind(this.rowId, j) &&
-//          !this.blocked(this.rowId, j) && j >= this.colId - this.power; j--) {
-//       tryChain(this.rowId, j);
-//     }
-//   }
-// }
+// =============================================================================
+//  炸弹核心
+// =============================================================================
+class BombState extends EntityState {
+  constructor(id, x, y, power) {
+    super(id, x, y);
+    this.chain = [];
+    this.power = power;
+    this.putTime = +new Date();
+    this.ttl = 3000; // 3秒
+    bombMatrix[this.rowId][this.colId] = id;
+  }
+
+  blocked(rowId, colId) {
+    return bind(rowId, colId) && boxMatrix[rowId][colId];
+  }
+
+  doBomb() {
+    bombMatrix[this.rowId][this.colId] = 0;
+    delete bombs[this.id];
+
+    // 中
+    var id = getID();
+    waves[id] = new WaveState(id, this.rowId, this.colId, types.dir.up);
+
+    var r = 0;
+    var c = 0;
+
+    // 上
+    for (r = this.rowId - 1; r >= this.rowId - this.power; r--) {
+      if (!bind(r, this.colId)) {
+        break;
+      }
+      if (boxMatrix[r][this.colId]) {
+        break;
+      }
+      var id = getID();
+      waves[id] = new WaveState(id, r, this.colId, types.dir.up);
+    }
+    // 下
+    for (r = this.rowId + 1; r <= this.rowId + this.power; r++) {
+      if (!bind(r, this.colId)) {
+        break;
+      }
+      if (boxMatrix[r][this.colId]) {
+        break;
+      }
+      var id = getID();
+      waves[id] = new WaveState(id, r, this.colId, types.dir.down);
+    }
+    // 左
+    for (c = this.colId - 1; c >= this.colId - this.power; c--) {
+      if (!bind(this.rowId, c)) {
+        break;
+      }
+      if (boxMatrix[this.rowId][c]) {
+        break;
+      }
+      var id = getID();
+      waves[id] = new WaveState(id, this.rowId, c, types.dir.left);
+    }
+    // 右
+    for (c = this.colId + 1; c <= this.colId + this.power; c++) {
+      if (!bind(this.rowId, c)) {
+        break;
+      }
+      if (boxMatrix[this.rowId][c]) {
+        break;
+      }
+      var id = getID();
+      waves[id] = new WaveState(id, this.rowId, c, types.dir.right);
+    }
+  }
+
+  // 链爆
+  chainBomb(currentBomb) {
+    bombsVisited[currentBomb.id] = 1;
+    currentBomb.doBomb();
+    for (i in currentBomb.chain) {
+      if (bombsVisited[currentBomb.chain[i]]) {
+        continue;
+      }
+      bombsVisited[currentBomb.chain[i]] = 1;
+      this.chainBomb(bombs[currentBomb.chain[i]]);
+    }
+  }
+
+  tryChain(rowId, colId) {
+    var otherId = bombMatrix[rowId][colId];
+    if (bind(rowId, colId) && otherId) {
+      bombs[this.id].chain.push(otherId);
+      bombs[otherId].chain.push(this.id);
+    }
+  }
+
+  // 放置炸弹时, 尝试链接其他炸弹, 达到链爆效果
+  doChain() {
+    // 向下链接
+    for (i = this.rowId + 1;
+        bind(i, this.colId) &&
+        !this.blocked(i, this.colId) && i <= this.rowId + this.power; i++) {
+      this.tryChain(i, this.colId);
+    }
+    // 向上链接
+    for (i = this.rowId - 1;
+        bind(i, this.colId) &&
+        !this.blocked(i, this.colId) && i >= this.rowId - this.power; i--) {
+      this.tryChain(i, this.colId);
+    }
+    // 向右链接
+    for (j = this.colId + 1;
+        bind(this.rowId, j) &&
+        !this.blocked(this.rowId, j) && j <= this.colId + this.power; j++) {
+      this.tryChain(this.rowId, j);
+    }
+    // 向左链接
+    for (j = this.colId - 1;
+        bind(this.rowId, j) &&
+        !this.blocked(this.rowId, j) && j >= this.colId - this.power; j--) {
+      this.tryChain(this.rowId, j);
+    }
+  }
+
+  update(delta) {
+    var nowTs = +new Date();
+    if (nowTs - this.putTime >= this.ttl) {
+      bombsVisited = {};
+      this.chainBomb(this);
+    }
+  }
+}
 bombs = {};
-bombVisit = {};
+bombsVisited = {};
 var bombMatrix;
 
-// // =============================================================================
-// //  爆波
-// // =============================================================================
-// class WaveState extends EntityState {
-//   constructor(id, x, y, dir, nextRowOrColId, maxRowOrColId) {
-//     super(id, y * UNIT_WIDTH, x * UNIT_HEIGHT);
-//     this.dir = dir;
-//     this.nextRowOrColId = nextRowOrColId;
-//     this.maxRowOrColId = maxRowOrColId;
-//     this.spreadTime = 17;
-//     this.rowId = x;
-//     this.colId = y;
-//
-//     if (boxMatrix[this.rowId][this.colId]) {
-//       this.nextRowOrColId = this.maxRowOrColId;
-//     }
-//   }
-// }
+// =============================================================================
+//  爆波
+// =============================================================================
+class WaveState extends EntityState {
+  constructor(id, rowId, colId, dir) {
+    super(id, colId * UNIT_WIDTH, rowId * UNIT_HEIGHT);
+    this.dir = dir;
+    this.rowId = rowId;
+    this.colId = colId;
+    this.createTime = +new Date();
+    this.ttl = 400 // 1秒
+  }
+
+  update(delta) {
+    var nowTs = +new Date();
+    if (this.createTime + this.ttl < nowTs) {
+      delete waves[this.id];
+      return;
+    }
+  }
+}
 waves = {};
 
 
@@ -345,8 +401,8 @@ function sendMessage(msg) {
   sendQueue.push(msg);
 }
 
-function recvMessage(msg) {
-  msgQueue.push(msg);
+function recvMessage(id, msg) {
+  msgQueue.push({'id': id, 'msg': msg});
 }
 
 // =============================================================================
@@ -368,22 +424,10 @@ function releaseID(id) {
 }
 
 function init(map) {
-  for (i = 0; i < MAX_ROW; i++) {
-    for (j = 0; j < MAX_COL; j++) {
-      if (map[i][j] == 1) {
-        var id = getID();
-        boxes[id] = new EntityState(id, i * UNIT_WIDTH, j * UNIT_HEIGHT);
-      }
-    }
-  }
-
   // 箱子
   boxMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
     boxMatrix[i] = new Array(MAX_COL);
-    for (j = 0; j < MAX_COL; j++) {
-      boxMatrix[i][j] = map[i][j];
-    }
   }
 
   // 炸弹
@@ -391,16 +435,32 @@ function init(map) {
   for (i = 0; i < MAX_ROW; i++) {
     bombMatrix[i] = new Array(MAX_COL);
   }
+
+  for (i = 0; i < MAX_ROW; i++) {
+    for (j = 0; j < MAX_COL; j++) {
+      if (map[i][j] == 1) {
+        var id = getID();
+        boxes[id] = new EntityState(id, j * UNIT_WIDTH, i * UNIT_HEIGHT);
+        boxMatrix[i][j] = id;
+      } else {
+        boxMatrix[i][j] = 0;
+      }
+    }
+  }
 }
 
-function handleClientMessage(msg) {
+function handleClientMessage(data) {
+  var id = data.id;
+  var msg = data.msg;
+
   switch (msg.opcode) {
   case types.opcode.move:
-    var id = msg.id;
-
     var player = players[id];
     player.applyInput(msg.input);
     player.ackSeqId = msg.input.seqId;
+  break;
+  case types.opcode.put_bomb:
+    players[id].putBomb();
   break;
   }
 }
@@ -421,6 +481,22 @@ function broadcastState() {
         }
       });
     }
+
+    sendMessage({
+      'to': id,
+      'data': {
+        'opcode': types.opcode.bomb,
+        'bombs': bombs,
+      }
+    });
+
+    sendMessage({
+      'to': id,
+      'data': {
+        'opcode': types.opcode.wave,
+        'waves': waves,
+      }
+    });
   }
 }
 
@@ -435,7 +511,6 @@ function update(delta, callback, broadcast) {
   // 更新其他
   for (i in waves) { waves[i].update(delta); }
   for (i in bombs) { bombs[i].update(delta); }
-  for (i in boxes) { boxes[i].update(delta); }
 
   broadcast();
 }
@@ -532,3 +607,4 @@ E.recvMessage = recvMessage;
 E.processSend = processSend;
 E.handleClientMessage = handleClientMessage;
 E.broadcastState = broadcastState;
+E.SERVER_FRAME = SERVER_FRAME;
