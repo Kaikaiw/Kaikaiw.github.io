@@ -90,6 +90,20 @@ function getRowID(vertical) {
 function getColID(horizontal) {
   return Math.floor((horizontal + UNIT_WIDTH / 2) / UNIT_WIDTH);
 }
+// 删除
+function remove(dict, id, matrix) {
+  if (typeof matrix != 'undefined') {
+    matrix[dict[id].rowId][dict[id].colId] = 0;
+  }
+  delete dict[id];
+  releaseID(id);
+}
+function clientRemove(dict, id, matrix) {
+  if (typeof matrix != 'undefined') {
+    matrix[dict[id].state.rowId][dict[id].state.colId] = 0;
+  }
+  delete dict[id];
+}
 
 // =============================================================================
 //  循环队列
@@ -257,9 +271,7 @@ class PlayerState extends EntityState {
     var lootId = lootMatrix[this.rowId][this.colId];
     if (lootId) {
       this.pickupLoot(loots[lootId].type);
-      lootMatrix[this.rowId][this.colId] = 0;
-      delete loots[lootId];
-      releaseID(lootId);
+      remove(loots, lootId, lootMatrix)
 
       sendMessage({to: this.id, data: {opcode: types.opcode.pickup_loot,}});
     }
@@ -276,9 +288,8 @@ class PlayerState extends EntityState {
     this.currentBombNumber++;
 
     var id = getID();
-    var bomb = new BombState(id, this.x, this.y, this.power, this.id);
-    bombs[id] = bomb;
-    bomb.doChain();
+    bombs[id] = new BombState(id, this.x, this.y, this.power, this.id);
+    bombs[id].doChain();
 
   }
 
@@ -351,9 +362,7 @@ class BombState extends EntityState {
   }
 
   doBomb() {
-    bombMatrix[this.rowId][this.colId] = 0;
-    delete bombs[this.id];
-    releaseID(this.id);
+    remove(bombs, this.id, bombMatrix);
     players[this.owner].currentBombNumber--;
 
     // 中
@@ -492,17 +501,14 @@ class WaveState extends EntityState {
 
     var lootId = lootMatrix[this.rowId][this.colId];
     if (lootId) {
-      lootMatrix[this.rowId][this.colId] = 0;
-      delete loots[lootId];
-      releaseID(lootId);
+      remove(loots, lootId, lootMatrix);
     }
   }
 
   update(delta) {
     var nowTs = +new Date();
     if (this.createTime + this.ttl < nowTs) {
-      delete waves[this.id];
-      releaseID(this.id);
+      remove(waves, this.id);
       return;
     }
   }
@@ -651,9 +657,7 @@ function update(delta, callback, broadcast) {
       lootMatrix[rowId][colId] = lootId;
     }
 
-    boxMatrix[boxes[id].rowId][boxes[id].colId] = 0;
-    delete boxes[id];
-    releaseID(id);
+    remove(boxes, id, boxMatrix);
   }
   toDestroyBoxes = {};
 
@@ -690,9 +694,8 @@ function spawnPlayer(id, socket) {
   if (!(id in players) && numPlayers < MAX_PLAYERS) {
     var spawnX = playerSpawns[numPlayers][0];
     var spawnY = playerSpawns[numPlayers][1];
-    var player = new PlayerState(id, spawnX, spawnY, 96, 118);
+    players[id] = new PlayerState(id, spawnX, spawnY, 96, 118);
     numPlayers++;
-    players[id] = player;
   }
 
   sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});

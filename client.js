@@ -413,8 +413,7 @@ function handleMessage(data) {
     case types.opcode.bomb:
       for (id in bombs) {
         if (!(id in msg.bombs)) {
-          bombMatrix[bombs[id].state.rowId][bombs[id].state.colId] = 0;
-          delete bombs[id];
+          clientRemove(bombs, id, bombMatrix);
           Resource.playSnd(types.sound.explode);
         }
       }
@@ -445,8 +444,7 @@ function handleMessage(data) {
     case types.opcode.box:
       for (id in boxes) {
         if (!(id in msg.boxes)) {
-          boxMatrix[boxes[id].state.rowId][boxes[id].state.colId] = 0;
-          delete boxes[id];
+          clientRemove(boxes, id, boxMatrix);
         }
       }
       for (id in msg.boxes) {
