@@ -2,7 +2,7 @@
 //  客户端
 // =============================================================================
 inputSeqId = 0;
-pendingInputs = [] // 预测后输入重建
+pendingInputs = new Queue(MAX_QUEUE_SIZE); // 预测后输入重建
 
 // =============================================================================
 //  各种资源
@@ -378,16 +378,18 @@ function handleMessage(data) {
       if (id === localPlayerId) {
         setPlayerPosition(player, msg.x, msg.y, msg.dir);
 
-        var i = 0;
-        while (i < pendingInputs.length) {
-          var pendingInput = pendingInputs[i];
+        while (!pendingInputs.empty()) {
+          var pendingInput = pendingInputs.peek();
           if (pendingInput.seqId <= msg.ackSeqId) {
-            pendingInputs.splice(i, 1);
+            pendingInputs.shift();
           } else {
-            player.applyInput(pendingInput);
-            i++;
+            break;
           }
         }
+
+        pendingInputs.iterate((pendingInput) => {
+          player.applyInput(pendingInput);
+        });
       } else {
         player.state.dir = msg.dir;
         player.state.buffer.push({'ts': +new Date(), 'x': msg.x, 'y': msg.y,});
@@ -478,7 +480,7 @@ function serverBroadCast() {
 }
 
 function clientProcessSend() {
-  while (sendQueue.length > 0) {
+  while (!sendQueue.empty()) {
     server.emit('opcode', sendQueue.shift());
   }
 }

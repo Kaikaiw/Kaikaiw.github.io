@@ -50,8 +50,6 @@ types = {
   },
   // 操作代码
   opcode: {
-    key_down:          0,
-    key_up:            1,
     put_bomb:          2,
     explode:           4,
     wave:              5,
@@ -71,6 +69,7 @@ types = {
 SERVER_FRAME = 10;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131072;
+MAX_QUEUE_SIZE = 1024;
 MAX_ROW = 16;
 MAX_COL = 16;
 UNIT_WIDTH = 50;
@@ -90,6 +89,61 @@ function getRowID(vertical) {
 // 转换水平坐标到2d矩阵列
 function getColID(horizontal) {
   return Math.floor((horizontal + UNIT_WIDTH / 2) / UNIT_WIDTH);
+}
+
+// =============================================================================
+//  循环队列
+// =============================================================================
+class Queue {
+  constructor(size) {
+    this.size = size;
+    this.data = [this.size];
+    this.queueL = 0;
+    this.queueR = 0;
+  }
+
+  empty() {
+    return this.queueL == this.queueR;
+  }
+
+  full() {
+    return (this.queueR + 1) % this.size == this.queueL;
+  }
+
+  shift() {
+    let d = this.data[this.queueL];
+    this.queueL = (this.queueL + 1) % this.size;
+    return d;
+  }
+
+  push(d) {
+    this.data[this.queueR] = d;
+    this.queueR = (this.queueR + 1) % this.size;
+  }
+
+  peek() {
+    return this.data[this.queueL];
+  }
+
+  peekSecond() {
+    return this.data[(this.queueL + 1) % this.size];
+  }
+
+  length() {
+    if (this.queueL <= this.queueR) {
+      return this.queueR - this.queueL;
+    } else {
+      return this.size - this.queueL + this.queueR;
+    }
+  }
+
+  iterate(callback) {
+    var i = this.queueL;
+    while (i != this.queueR) {
+      callback(this.data[i]);
+      i = (i + 1) % this.size;
+    }
+  }
 }
 
 // =============================================================================
@@ -142,7 +196,7 @@ class PlayerState extends EntityState {
     this.power = 3;
     this.currentBombNumber = 0;
     this.maxBombNumber = 1;
-    this.buffer = [];  // 插值玩家状态
+    this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
   }
 
@@ -217,22 +271,28 @@ class PlayerState extends EntityState {
   update(delta) {
     var renderTs = +new Date() - 1000.0 / SERVER_FRAME;
 
-    while (this.buffer.length >= 2 && this.buffer[1].ts <= renderTs) {
-      this.buffer.shift();
+    while (this.buffer.length() >= 2) {
+      if (this.buffer.peekSecond().ts <= renderTs) {
+        this.buffer.shift();
+      } else {
+        break;
+      }
     }
 
-    if (this.buffer.length >= 2 &&
-        this.buffer[0].ts <= renderTs &&
-        renderTs <= this.buffer[1].ts) {
-      var x0 = this.buffer[0].x;
-      var x1 = this.buffer[1].x;
-      var y0 = this.buffer[0].y;
-      var y1 = this.buffer[1].y;
-      var t0 = this.buffer[0].ts;
-      var t1 = this.buffer[1].ts;
+    if (this.buffer.length() >= 2) {
+      var left = this.buffer.peek();
+      var right = this.buffer.peekSecond();
+      if (left.ts <= renderTs && renderTs <= right.ts) {
+        var x0 = left.x;
+        var x1 = right.x;
+        var y0 = left.y;
+        var y1 = right.y;
+        var t0 = left.ts;
+        var t1 = right.ts;
 
-      this.x = x0 + (x1 - x0) * (renderTs - t0) / (t1 - t0);
-      this.y = y0 + (y1 - y0) * (renderTs - t0) / (t1 - t0);
+        this.x = x0 + (x1 - x0) * (renderTs - t0) / (t1 - t0);
+        this.y = y0 + (y1 - y0) * (renderTs - t0) / (t1 - t0);
+      }
     }
   }
 
@@ -451,23 +511,27 @@ var lootMatrix;
 // =============================================================================
 //  网络
 // =============================================================================
-msgQueue = [];
-sendQueue = [];
+msgQueue = new Queue(MAX_QUEUE_SIZE);
+sendQueue = new Queue(MAX_QUEUE_SIZE)
 clients = {};
 
 function sendMessage(msg) {
-  sendQueue.push(msg);
+  if (!sendQueue.full()) {
+    sendQueue.push(msg);
+  }
 }
 
 function recvMessage(id, msg) {
-  msgQueue.push({'id': id, 'msg': msg});
+  if (!msgQueue.full()) {
+    msgQueue.push({'id': id, 'msg': msg});
+  }
 }
 
 // =============================================================================
 //  UTIL
 // =============================================================================
 oldTs = 0;
-idQueue = [];
+idQueue = new Queue(MAX_ID);
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
@@ -586,7 +650,7 @@ function broadcastState() {
 
 function update(delta, callback, broadcast) {
   // 接收网络消息
-  while (msgQueue.length > 0) {
+  while (!msgQueue.empty()) {
     callback(msgQueue.shift()); // handleClientMessage
   }
 
@@ -618,7 +682,7 @@ function update(delta, callback, broadcast) {
 }
 
 function processSend() {
-  while (sendQueue.length > 0) {
+  while (!sendQueue.empty()) {
     var msg = sendQueue.shift();
     clients[msg.to].emit('opcode', msg.data);
   }
