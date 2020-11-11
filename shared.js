@@ -55,10 +55,8 @@ types = {
     put_bomb:          2,
     explode:           4,
     wave:              5,
-    delete_box:        7,
     loot:              8,
-    delete_loot:       9,
-    apply_loot:       10,
+    pickup_loot:       9,
     new_player:       12,
     new_player_local: 13,
     move:             14,
@@ -113,6 +111,10 @@ class EntityState {
     // pass...
   }
 }
+
+// =============================================================================
+//  箱子
+// =============================================================================
 class BoxState extends EntityState {
   constructor(id, x, y) {
     super(id, x, y);
@@ -149,6 +151,10 @@ class PlayerState extends EntityState {
     this.speed = 0.01;
   }
 
+  pickupLoot(type) {
+    // TODO
+  }
+
   move(delta, dir) {
     this.dir = dir;
     var toX = this.x;
@@ -180,6 +186,15 @@ class PlayerState extends EntityState {
     this.y = toY;
     this.rowId = toRowId;
     this.colId = toColId;
+
+    var lootId = lootMatrix[this.rowId][this.colId];
+    if (lootId) {
+      this.pickupLoot(loots[lootId].type);
+      lootMatrix[this.rowId][this.colId] = 0;
+      delete loots[lootId];
+
+      sendMessage({'to': this.id, 'data': {'opcode': types.opcode.pickup_loot,}});
+    }
   }
 
   putBomb() {
@@ -415,6 +430,23 @@ class WaveState extends EntityState {
 }
 waves = {};
 
+// =============================================================================
+//  强化
+// =============================================================================
+class LootState extends EntityState {
+  constructor(id, x, y) {
+    super(id, x, y);
+
+    var possibleTypes = [
+      types.loot.speed,
+      types.loot.power,
+      types.loot.bombs,
+    ];
+    this.type = possibleTypes[getRandomInt(3)];
+  }
+}
+loots = {};
+var lootMatrix;
 
 // =============================================================================
 //  网络
@@ -436,6 +468,10 @@ function recvMessage(id, msg) {
 // =============================================================================
 oldTs = 0;
 idQueue = [];
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * Math.floor(max));
+}
 
 function prepID() {
   for (i = 0; i < MAX_ID; i++) {
@@ -460,6 +496,12 @@ function init(map) {
   bombMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
     bombMatrix[i] = new Array(MAX_COL);
+  }
+
+  // 强化
+  lootMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    lootMatrix[i] = new Array(MAX_COL);
   }
 
   for (i = 0; i < MAX_ROW; i++) {
@@ -531,6 +573,14 @@ function broadcastState() {
         'boxes': boxes,
       }
     });
+
+    sendMessage({
+      'to': id,
+      'data': {
+        'opcode': types.opcode.loot,
+        'loots': loots,
+      }
+    });
   }
 }
 
@@ -548,6 +598,18 @@ function update(delta, callback, broadcast) {
 
   for (id in toDestroyBoxes) {
     boxMatrix[boxes[id].rowId][boxes[id].colId] = 0;
+
+    var rand = getRandomInt(100);
+    if (rand <= 30) { // 30%掉强化
+      var lootId = getID();
+      var x = boxes[id].x;
+      var y = boxes[id].y;
+      var rowId = boxes[id].rowId;
+      var colId = boxes[id].colId;
+      loots[lootId] = new LootState(lootId, x, y);
+      lootMatrix[rowId][colId] = lootId;
+    }
+
     delete boxes[id];
   }
   toDestroyBoxes = {};

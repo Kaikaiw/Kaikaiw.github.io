@@ -174,15 +174,15 @@ class Box extends Entity {
 }
 
 // =============================================================================
-//  掉落
+//  强化
 // =============================================================================
 class Loot extends Entity {
   constructor(id, x, y, type) {
     super();
     // 魔法数字...
-    this.state = new EntityState(id, x, y, 48, 48);
+    this.state = new EntityState(id, x, y);
     this.sprite = new Sprite(
-        types.entity.loot, 32, 48, UNIT_WIDTH * 0.9375, UNIT_HEIGHT * 0.9375);
+        types.entity.loot, 32, 48, UNIT_WIDTH, UNIT_HEIGHT * 1.5);
     this.sprite.startX = type * this.sprite.sizeX;
     this.sprite.cycleTime = INFINITE;
     this.sprite.maxCycle = 1;
@@ -257,7 +257,6 @@ class Player extends Entity {
       sendMessage({
         'opcode': types.opcode.put_bomb,
       });
-      Resource.playSnd(types.sound.put_bomb);
     }
 
     if (Object.keys(input).length != 0 && !shouldProcessSpace) {
@@ -421,6 +420,9 @@ function handleMessage(data) {
         if (!(id in bombs)) {
           var bomb = new Bomb(id, msg.bombs[id].x, msg.bombs[id].y);
           bombs[id] = bomb;
+          if (msg.bombs[id].owner == localPlayerId) {
+            Resource.playSnd(types.sound.put_bomb);
+          }
         }
       }
     break;
@@ -452,27 +454,23 @@ function handleMessage(data) {
         }
       }
     break;
+    case types.opcode.loot:
+      for (id in loots) {
+        if (!(id in msg.loots)) {
+          delete loots[id];
+        }
+      }
+      for (id in msg.loots) {
+        if (!(id in loots)) {
+          var loot = new Loot(id, msg.loots[id].x, msg.loots[id].y, msg.loots[id].type);
+          loots[id] = loot;
+        }
+      }
+    break;
+    case types.opcode.pickup_loot:
+      Resource.playSnd(types.sound.pickup_loot);
+    break;
   }
-    // var packet = req.data[p];
-    // var op = packet.op;
-    // var data = packet.data;
-    // switch (op) {
-    // case TYPES.OP.LOOT:
-    //   for (d in data) {
-    //     var id = data[d].id;
-    //     var pos = data[d].pos;
-    //     loots[id] = new Loot(id, pos[0], pos[1], pos[2]);
-    //   }
-    //   break;
-    // case TYPES.OP.NLOOT:
-    //   for (d in data)
-    //     delete loots[data[d]];
-    //   break;
-    // case TYPES.OP.GLOOT:
-    //   Resource.playSnd(TYPES.SOUND.LOOT);
-    //   players[localPlayerId].speed = data.speed;
-    //   break;
-    // }
 }
 
 function serverBroadCast() {
@@ -512,6 +510,12 @@ function streamGame(data) {
     bombMatrix[i] = new Array(MAX_COL);
   }
 
+  // 强化
+  lootMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    lootMatrix[i] = new Array(MAX_COL);
+  }
+
   // 玩家
   players = {};
   for (i in data.players) {
@@ -542,8 +546,8 @@ function render(delta) {
   for (i in loots) { loots[i].render(delta); }
   for (i in bombs) { bombs[i].render(delta); }
   for (i in waves) { waves[i].render(delta); }
-  for (i in players) { players[i].render(delta); }
   for (i in boxes) { boxes[i].render(delta); }
+  for (i in players) { players[i].render(delta); }
 }
 
 // =============================================================================
