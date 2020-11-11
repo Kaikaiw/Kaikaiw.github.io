@@ -487,6 +487,12 @@ class WaveState extends EntityState {
     this.colId = colId;
     this.createTime = +new Date();
     this.ttl = 400 // 1秒
+
+    var lootId = lootMatrix[this.rowId][this.colId];
+    if (lootId) {
+      lootMatrix[this.rowId][this.colId] = 0;
+      delete loots[lootId];
+    }
   }
 
   update(delta) {
