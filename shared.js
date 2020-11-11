@@ -63,6 +63,7 @@ types = {
     new_player_local: 13,
     move:             14,
     bomb:             15,
+    box:              16,
   }
 };
 
@@ -112,7 +113,20 @@ class EntityState {
     // pass...
   }
 }
+class BoxState extends EntityState {
+  constructor(id, x, y) {
+    super(id, x, y);
+    boxMatrix[this.rowId][this.colId] = this.id;
+  }
+
+  destroyBox() {
+    if (!(this.id in toDestroyBoxes)) {
+      toDestroyBoxes[this.id] = this;
+    }
+  }
+}
 boxes = {};
+toDestroyBoxes = {}
 var boxMatrix;
 
 // =============================================================================
@@ -265,6 +279,8 @@ class BombState extends EntityState {
         break;
       }
       if (boxMatrix[r][this.colId]) {
+        var id = boxMatrix[r][this.colId];
+        boxes[id].destroyBox();
         break;
       }
       var id = getID();
@@ -276,6 +292,8 @@ class BombState extends EntityState {
         break;
       }
       if (boxMatrix[r][this.colId]) {
+        var id = boxMatrix[r][this.colId];
+        boxes[id].destroyBox();
         break;
       }
       var id = getID();
@@ -287,6 +305,8 @@ class BombState extends EntityState {
         break;
       }
       if (boxMatrix[this.rowId][c]) {
+        var id = boxMatrix[this.rowId][c];
+        boxes[id].destroyBox();
         break;
       }
       var id = getID();
@@ -298,6 +318,8 @@ class BombState extends EntityState {
         break;
       }
       if (boxMatrix[this.rowId][c]) {
+        var id = boxMatrix[this.rowId][c];
+        boxes[id].destroyBox();
         break;
       }
       var id = getID();
@@ -440,7 +462,7 @@ function init(map) {
     for (j = 0; j < MAX_COL; j++) {
       if (map[i][j] == 1) {
         var id = getID();
-        boxes[id] = new EntityState(id, j * UNIT_WIDTH, i * UNIT_HEIGHT);
+        boxes[id] = new BoxState(id, j * UNIT_WIDTH, i * UNIT_HEIGHT);
         boxMatrix[i][j] = id;
       } else {
         boxMatrix[i][j] = 0;
@@ -497,6 +519,14 @@ function broadcastState() {
         'waves': waves,
       }
     });
+
+    sendMessage({
+      'to': id,
+      'data': {
+        'opcode': types.opcode.box,
+        'boxes': boxes,
+      }
+    });
   }
 }
 
@@ -511,6 +541,12 @@ function update(delta, callback, broadcast) {
   // 更新其他
   for (i in waves) { waves[i].update(delta); }
   for (i in bombs) { bombs[i].update(delta); }
+
+  for (id in toDestroyBoxes) {
+    boxMatrix[boxes[id].rowId][boxes[id].colId] = 0;
+    delete boxes[id];
+  }
+  toDestroyBoxes = {};
 
   broadcast();
 }

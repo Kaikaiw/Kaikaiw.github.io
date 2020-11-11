@@ -165,7 +165,7 @@ class Box extends Entity {
   constructor(id, x, y) {
     super();
     // 魔法数字...
-    this.state = new EntityState(id, x, y, 64, 79);
+    this.state = new BoxState(id, x, y);
     this.sprite =
       new Sprite(types.entity.box, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
     this.sprite.cycleTime = -1;
@@ -438,18 +438,25 @@ function handleMessage(data) {
         }
       }
     break;
+    case types.opcode.box:
+      for (id in boxes) {
+        if (!(id in msg.boxes)) {
+          boxMatrix[boxes[id].state.rowId][boxes[id].state.colId] = 0;
+          delete boxes[id];
+        }
+      }
+      for (id in msg.boxes) {
+        if (!(id in boxes)) {
+          var box = new Box(id, msg.boxes[id].x, msg.boxes[id].y);
+          boxes[id] = box;
+        }
+      }
+    break;
   }
     // var packet = req.data[p];
     // var op = packet.op;
     // var data = packet.data;
     // switch (op) {
-    // case TYPES.OP.NBOX:
-    //   for (d in data) {
-    //     var B = boxes[data[d]];
-    //     boxMatrix[B.rowId][B.colId] = 0;
-    //     delete boxes[data[d]];
-    //   }
-    //   break;
     // case TYPES.OP.LOOT:
     //   for (d in data) {
     //     var id = data[d].id;
@@ -497,14 +504,6 @@ function streamGame(data) {
   boxMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
     boxMatrix[i] = new Array(MAX_COL);
-    for (j = 0; j < MAX_COL; j++) {
-      boxMatrix[i][j] = 0;
-    }
-  }
-  for (i in data.boxes) {
-    var box = data.boxes[i];
-    boxes[box.id] = new Box(box.id, box.x, box.y);
-    boxMatrix[box.rowId][box.colId] = 1;
   }
 
   // 炸弹
