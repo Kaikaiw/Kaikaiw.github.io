@@ -253,7 +253,7 @@ class Player extends Entity {
 
     var shouldProcessSpace = !this.spacePressed && keyPressed[types.key.space];
     this.spacePressed = keyPressed[types.key.space];
-    if (shouldProcessSpace) {
+    if (shouldProcessSpace && this.state.currentBombNumber < this.state.maxBombNumber) {
       sendMessage({
         'opcode': types.opcode.put_bomb,
       });
@@ -404,9 +404,9 @@ function handleMessage(data) {
         if (remotePlayer.downed == true) {
           player.downPlayer();
         }
-        player.state.power = player.power;
-        player.state.currentBombNumber = player.currentBombNumber;
-        player.state.maxBombNumber = player.maxBombNumber;
+        player.state.power = remotePlayer.power;
+        player.state.currentBombNumber = remotePlayer.currentBombNumber;
+        player.state.maxBombNumber = remotePlayer.maxBombNumber;
       }
     break;
     case types.opcode.bomb:

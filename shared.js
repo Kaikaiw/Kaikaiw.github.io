@@ -66,7 +66,7 @@ types = {
 // =============================================================================
 //  全局配置 / 坐标转换
 // =============================================================================
-SERVER_FRAME = 10;
+SERVER_FRAME = 20;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131072;
 MAX_QUEUE_SIZE = 1024;
@@ -193,9 +193,12 @@ class PlayerState extends EntityState {
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
     this.speed = 0.20;
-    this.power = 3;
+    this.maxSpeed = 0.40;
+    this.power = 1;
+    this.maxPower = 8;
     this.currentBombNumber = 0;
     this.maxBombNumber = 1;
+    this.maxMaxBombNumber = 8;
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
   }
@@ -206,7 +209,17 @@ class PlayerState extends EntityState {
   }
 
   pickupLoot(type) {
-    // TODO
+    switch(type) {
+      case types.loot.speed:
+        this.speed = Math.min(this.maxSpeed, this.speed + 0.03);
+      break;
+      case types.loot.power:
+        this.power = Math.min(this.maxPower, this.power + 1);
+      break;
+      case types.loot.bombs:
+        this.maxBombNumber = Math.min(this.maxMaxBombNumber, this.maxBombNumber + 1);
+      break;
+    }
   }
 
   move(delta, dir) {
