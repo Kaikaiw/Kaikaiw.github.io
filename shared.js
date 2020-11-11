@@ -66,7 +66,7 @@ types = {
 // =============================================================================
 //  全局配置 / 坐标转换
 // =============================================================================
-SERVER_FRAME = 20;
+SERVER_FRAME = 15;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131072;
 MAX_QUEUE_SIZE = 1024;
@@ -192,8 +192,8 @@ class PlayerState extends EntityState {
   constructor(id, x, y, sizeX, sizeY){
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
-    this.speed = 0.20;
-    this.maxSpeed = 0.40;
+    this.speed = 0.15;
+    this.maxSpeed = 0.30;
     this.power = 1;
     this.maxPower = 8;
     this.currentBombNumber = 0;
@@ -211,7 +211,7 @@ class PlayerState extends EntityState {
   pickupLoot(type) {
     switch(type) {
       case types.loot.speed:
-        this.speed = Math.min(this.maxSpeed, this.speed + 0.03);
+        this.speed = Math.min(this.maxSpeed, this.speed + 0.02);
       break;
       case types.loot.power:
         this.power = Math.min(this.maxPower, this.power + 1);
