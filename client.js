@@ -393,6 +393,7 @@ function handleMessage(data) {
             }
           }
 
+          player.state.speed = remotePlayer.speed;
           pendingInputs.iterate((pendingInput) => {
             player.applyInput(pendingInput);
           });
@@ -401,12 +402,12 @@ function handleMessage(data) {
           player.state.buffer.push({'ts': +new Date(), 'x': remotePlayer.x, 'y': remotePlayer.y,});
         }
 
-        if (remotePlayer.downed == true) {
-          player.downPlayer();
-        }
         player.state.power = remotePlayer.power;
         player.state.currentBombNumber = remotePlayer.currentBombNumber;
         player.state.maxBombNumber = remotePlayer.maxBombNumber;
+        if (remotePlayer.downed == true) {
+          player.downPlayer();
+        }
       }
     break;
     case types.opcode.bomb:

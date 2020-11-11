@@ -66,7 +66,7 @@ types = {
 // =============================================================================
 //  全局配置 / 坐标转换
 // =============================================================================
-SERVER_FRAME = 15;
+SERVER_FRAME = 5;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131072;
 MAX_QUEUE_SIZE = 1024;
@@ -259,6 +259,7 @@ class PlayerState extends EntityState {
       this.pickupLoot(loots[lootId].type);
       lootMatrix[this.rowId][this.colId] = 0;
       delete loots[lootId];
+      releaseID(lootId);
 
       sendMessage({to: this.id, data: {opcode: types.opcode.pickup_loot,}});
     }
@@ -352,6 +353,7 @@ class BombState extends EntityState {
   doBomb() {
     bombMatrix[this.rowId][this.colId] = 0;
     delete bombs[this.id];
+    releaseID(this.id);
     players[this.owner].currentBombNumber--;
 
     // 中
@@ -492,6 +494,7 @@ class WaveState extends EntityState {
     if (lootId) {
       lootMatrix[this.rowId][this.colId] = 0;
       delete loots[lootId];
+      releaseID(lootId);
     }
   }
 
@@ -499,6 +502,7 @@ class WaveState extends EntityState {
     var nowTs = +new Date();
     if (this.createTime + this.ttl < nowTs) {
       delete waves[this.id];
+      releaseID(this.id);
       return;
     }
   }
@@ -553,7 +557,7 @@ function getRandomInt(max) {
 }
 
 function prepID() {
-  for (i = 0; i < MAX_ID; i++) {
+  for (i = 1; i <= MAX_ID; i++) {
     idQueue.push(i);
   }
 }
@@ -565,6 +569,7 @@ function releaseID(id) {
 }
 
 function init(map) {
+  prepID();
   // 箱子
   boxMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
@@ -635,8 +640,6 @@ function update(delta, callback, broadcast) {
   for (i in bombs) { bombs[i].update(delta); }
 
   for (id in toDestroyBoxes) {
-    boxMatrix[boxes[id].rowId][boxes[id].colId] = 0;
-
     var rand = getRandomInt(100);
     if (rand <= 30) { // 30%掉强化
       var lootId = getID();
@@ -648,7 +651,9 @@ function update(delta, callback, broadcast) {
       lootMatrix[rowId][colId] = lootId;
     }
 
+    boxMatrix[boxes[id].rowId][boxes[id].colId] = 0;
     delete boxes[id];
+    releaseID(id);
   }
   toDestroyBoxes = {};
 
@@ -705,9 +710,6 @@ E.WIDTH = WIDTH;
 E.HEIGHT = HEIGHT;
 E.UNIT_WIDTH = UNIT_WIDTH;
 E.UNIT_HEIGHT = UNIT_HEIGHT;
-E.prepID = prepID;
-E.getID = getID;
-E.releaseID = releaseID;
 E.init = init;
 E.update = update;
 E.tick = tick;

@@ -42,7 +42,6 @@ map = [
 ]
 
 function initGame() {
-  E.prepID();
   E.init(map);
 
   setInterval(function () {
