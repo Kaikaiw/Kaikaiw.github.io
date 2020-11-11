@@ -190,11 +190,13 @@ class PlayerState extends EntityState {
     if (this.currentBombNumber >= this.maxBombNumber) {
       return;
     }
+    this.currentBombNumber++;
 
     var id = getID();
-    var bomb = new BombState(id, this.x, this.y, this.power);
+    var bomb = new BombState(id, this.x, this.y, this.power, this.id);
     bombs[id] = bomb;
     bomb.doChain();
+
   }
 
   update(delta) {
@@ -249,12 +251,13 @@ players = {};
 //  炸弹核心
 // =============================================================================
 class BombState extends EntityState {
-  constructor(id, x, y, power) {
+  constructor(id, x, y, power, owner) {
     super(id, x, y);
     this.chain = [];
     this.power = power;
     this.putTime = +new Date();
     this.ttl = 3000; // 3秒
+    this.owner = owner;
     bombMatrix[this.rowId][this.colId] = id;
   }
 
@@ -265,6 +268,7 @@ class BombState extends EntityState {
   doBomb() {
     bombMatrix[this.rowId][this.colId] = 0;
     delete bombs[this.id];
+    players[this.owner].currentBombNumber--;
 
     // 中
     var id = getID();
@@ -570,7 +574,6 @@ function tick(callback, broadcast) {
 
 function sendGameData(socket) {
   socket.emit('stream', {
-      boxes: boxes,
       players: players,
   });
 }
