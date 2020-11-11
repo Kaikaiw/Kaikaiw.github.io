@@ -346,12 +346,10 @@ function init() {
     }
   });
 
+  initGame();
+
   // websocket
   var socket = io("ws://192.168.8.191:8081");
-  socket.on('connect', function(data) {
-    socket.emit('stream');
-  });
-  socket.on('stream', streamGame);
   socket.on('opcode', function(msg) {
     recvMessage('server', msg);
   });
@@ -367,47 +365,48 @@ function setPlayerPosition(player, x, y, dir) {
 }
 
 function handleMessage(data) {
-  var id = data.id;
   var msg = data.msg;
 
   switch (msg.opcode) {
-    case types.opcode.move:
-      var id = msg.id;
-      var player = players[id];
-
-      if (id === localPlayerId) {
-        setPlayerPosition(player, msg.x, msg.y, msg.dir);
-
-        while (!pendingInputs.empty()) {
-          var pendingInput = pendingInputs.peek();
-          if (pendingInput.seqId <= msg.ackSeqId) {
-            pendingInputs.shift();
-          } else {
-            break;
-          }
+    case types.opcode.new_player:
+      localPlayerId = msg.id;
+    break;
+    case types.opcode.player:
+      for (id in msg.players) {
+        var remotePlayer = msg.players[id];
+        if (!(id in players)) { // 创建玩家
+          players[id] = new Player(
+            id, remotePlayer.x, remotePlayer.y, remotePlayer.sizeX, remotePlayer.sizeY);
         }
 
-        pendingInputs.iterate((pendingInput) => {
-          player.applyInput(pendingInput);
-        });
-      } else {
-        player.state.dir = msg.dir;
-        player.state.buffer.push({'ts': +new Date(), 'x': msg.x, 'y': msg.y,});
-      }
-    break;
-    case types.opcode.new_player:
-    case types.opcode.new_player_local:
-      var player = msg.player;
+        var player = players[id];
 
-      players[player.id] = 
-          new Player(player.id, player.x, player.y, player.sizeX, player.sizeY);
-      if (player.downed == true) {
-        players[id].downPlayer();
-      }
+        if (id === localPlayerId) {
+          setPlayerPosition(player, remotePlayer.x, remotePlayer.y, remotePlayer.dir);
 
-      if (msg.opcode == types.opcode.new_player_local) {
-        localPlayerId = player.id;
-        players[localPlayerId].speed = player.speed;
+          while (!pendingInputs.empty()) {
+            var pendingInput = pendingInputs.peek();
+            if (pendingInput.seqId <= remotePlayer.ackSeqId) {
+              pendingInputs.shift();
+            } else {
+              break;
+            }
+          }
+
+          pendingInputs.iterate((pendingInput) => {
+            player.applyInput(pendingInput);
+          });
+        } else {
+          player.state.dir = remotePlayer.dir;
+          player.state.buffer.push({'ts': +new Date(), 'x': remotePlayer.x, 'y': remotePlayer.y,});
+        }
+
+        if (remotePlayer.downed == true) {
+          player.downPlayer();
+        }
+        player.state.power = player.power;
+        player.state.currentBombNumber = player.currentBombNumber;
+        player.state.maxBombNumber = player.maxBombNumber;
       }
     break;
     case types.opcode.bomb:
@@ -485,7 +484,7 @@ function clientProcessSend() {
   }
 }
 
-function streamGame(data) {
+function initGame() {
   var canvas = document.getElementById("canvas");
   ctx = canvas.getContext("2d");
   canvas.width = WIDTH;
@@ -516,17 +515,6 @@ function streamGame(data) {
   lootMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
     lootMatrix[i] = new Array(MAX_COL);
-  }
-
-  // 玩家
-  players = {};
-  for (i in data.players) {
-    var player = data.players[i];
-    players[player.id] = 
-        new Player(player.id, player.x, player.y, player.sizeX, player.sizeY);
-    if (player.downed == true) {
-      players[id].downPlayer();
-    }
   }
 
   // 开始游戏

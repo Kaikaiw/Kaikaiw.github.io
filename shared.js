@@ -55,11 +55,11 @@ types = {
     wave:              5,
     loot:              8,
     pickup_loot:       9,
-    new_player:       12,
-    new_player_local: 13,
+    player:           12,
     move:             14,
     bomb:             15,
     box:              16,
+    new_player:       17,
   }
 };
 
@@ -247,7 +247,7 @@ class PlayerState extends EntityState {
       lootMatrix[this.rowId][this.colId] = 0;
       delete loots[lootId];
 
-      sendMessage({'to': this.id, 'data': {'opcode': types.opcode.pickup_loot,}});
+      sendMessage({to: this.id, data: {opcode: types.opcode.pickup_loot,}});
     }
   }
 
@@ -519,7 +519,7 @@ function sendMessage(msg) {
 
 function recvMessage(id, msg) {
   if (!msgQueue.full()) {
-    msgQueue.push({'id': id, 'msg': msg});
+    msgQueue.push({id: id, msg: msg});
   }
 }
 
@@ -595,52 +595,11 @@ function handleClientMessage(data) {
 
 function broadcastState() {
   for (id in players) {
-    for (otherId in players) {
-      let player = players[otherId];
-      sendMessage({
-        'to': id,
-        'data': {
-          'opcode': types.opcode.move,
-          'id': otherId,
-          'ackSeqId': player.ackSeqId,
-          'x': player.x,
-          'y': player.y,
-          'dir': player.dir,
-        }
-      });
-    }
-
-    sendMessage({
-      'to': id,
-      'data': {
-        'opcode': types.opcode.bomb,
-        'bombs': bombs,
-      }
-    });
-
-    sendMessage({
-      'to': id,
-      'data': {
-        'opcode': types.opcode.wave,
-        'waves': waves,
-      }
-    });
-
-    sendMessage({
-      'to': id,
-      'data': {
-        'opcode': types.opcode.box,
-        'boxes': boxes,
-      }
-    });
-
-    sendMessage({
-      'to': id,
-      'data': {
-        'opcode': types.opcode.loot,
-        'loots': loots,
-      }
-    });
+    sendMessage({to: id, data: { opcode: types.opcode.player, players: players,}});
+    sendMessage({to: id, data: { opcode: types.opcode.bomb, bombs: bombs,}});
+    sendMessage({to: id, data: { opcode: types.opcode.wave, waves: waves,}});
+    sendMessage({to: id, data: { opcode: types.opcode.box, boxes: boxes,}});
+    sendMessage({to: id, data: { opcode: types.opcode.loot, loots: loots,}});
   }
 }
 
@@ -694,12 +653,6 @@ function tick(callback, broadcast) {
   return delta;
 }
 
-function sendGameData(socket) {
-  socket.emit('stream', {
-      players: players,
-  });
-}
-
 playerSpawns = [
   [0, UNIT_HEIGHT * (MAX_ROW - 1)],
   [0, 0],
@@ -718,29 +671,7 @@ function spawnPlayer(id, socket) {
     players[id] = player;
   }
 
-
-  // 广播新玩家状态
-  for (otherId in players) {
-    if (otherId == id) {
-      continue;
-    }
-
-    sendMessage({
-      'to': otherId,
-      'data': {
-        'opcode': types.opcode.new_player,
-        'player': players[id],
-      }
-    });
-  }
-
-  sendMessage({
-    'to': id,
-    'data': {
-      'opcode': types.opcode.new_player_local,
-      'player': players[id],
-    }
-  });
+  sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
 }
 
 // =============================================================================
@@ -761,7 +692,6 @@ E.releaseID = releaseID;
 E.init = init;
 E.update = update;
 E.tick = tick;
-E.sendGameData = sendGameData;
 E.spawnPlayer = spawnPlayer;
 E.sendMessage = sendMessage;
 E.recvMessage = recvMessage;

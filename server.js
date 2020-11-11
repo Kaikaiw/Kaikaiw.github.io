@@ -56,14 +56,9 @@ function init() {
   // 网络
   var io = require('socket.io')(8081);
   io.on('connection', (socket) => {
-    socket.on('stream', () => {
-      E.sendGameData(socket);
-
-      var id = socket.request.connection.remoteAddress;
-      E.spawnPlayer(id, socket);
-    });
+    var id = socket.request.connection.remoteAddress;
+    E.spawnPlayer(id, socket);
     socket.on('opcode', (msg) => {
-      var id = socket.request.connection.remoteAddress;
       E.recvMessage(id, msg);
     });
   });
