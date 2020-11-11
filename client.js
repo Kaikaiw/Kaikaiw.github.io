@@ -218,7 +218,7 @@ class Player extends Entity {
         UNIT_HEIGHT * 1.875
     );
     this.sprite.maxCycle = 4;
-    this.sprite.cycleTime = 170;
+    this.sprite.cycleTime = 200;
   }
 
   applyInput(input) {
@@ -377,6 +377,7 @@ function handleMessage(data) {
         if (!(id in players)) { // 创建玩家
           players[id] = new Player(
             id, remotePlayer.x, remotePlayer.y, remotePlayer.sizeX, remotePlayer.sizeY);
+          players[id].state.downPlayer = () => {};
         }
 
         var player = players[id];
@@ -405,7 +406,8 @@ function handleMessage(data) {
         player.state.power = remotePlayer.power;
         player.state.currentBombNumber = remotePlayer.currentBombNumber;
         player.state.maxBombNumber = remotePlayer.maxBombNumber;
-        if (remotePlayer.downed == true) {
+        if (!player.state.downed && remotePlayer.downed) {
+          player.state.downed = true;
           player.downPlayer();
         }
       }
@@ -430,7 +432,7 @@ function handleMessage(data) {
     case types.opcode.wave:
       for (id in waves) {
         if (!(id in msg.waves)) {
-          delete waves[id];
+          clientRemove(waves, id, waveMatrix);
         }
       }
       for (id in msg.waves) {
@@ -514,6 +516,18 @@ function initGame() {
   lootMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
     lootMatrix[i] = new Array(MAX_COL);
+  }
+
+  // 爆波
+  waveMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    waveMatrix[i] = new Array(MAX_COL);
+  }
+
+  // 玩家
+  playerMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    playerMatrix[i] = new Array(MAX_COL);
   }
 
   // 开始游戏

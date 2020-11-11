@@ -263,10 +263,17 @@ class PlayerState extends EntityState {
       return;
     }
 
+    if (waveMatrix[toRowId][toColId]) {
+      this.downPlayer();
+    }
+
+    playerMatrix[this.rowId][this.colId] = 0;
     this.x = toX;
     this.y = toY;
     this.rowId = toRowId;
     this.colId = toColId;
+    playerMatrix[this.rowId][this.colId] = this.id;
+
 
     var lootId = lootMatrix[this.rowId][this.colId];
     if (lootId) {
@@ -342,6 +349,7 @@ class PlayerState extends EntityState {
   }
 }
 players = {};
+var playerMatrix;
 
 // =============================================================================
 //  炸弹核心
@@ -503,17 +511,25 @@ class WaveState extends EntityState {
     if (lootId) {
       remove(loots, lootId, lootMatrix);
     }
+
+    var playerId = playerMatrix[this.rowId][this.colId];
+    if (playerId) {
+      players[playerId].downPlayer();
+    }
+
+    waveMatrix[this.rowId][this.colId] = this.id;
   }
 
   update(delta) {
     var nowTs = +new Date();
     if (this.createTime + this.ttl < nowTs) {
-      remove(waves, this.id);
+      remove(waves, this.id, waveMatrix);
       return;
     }
   }
 }
 waves = {};
+var waveMatrix;
 
 // =============================================================================
 //  强化
@@ -592,6 +608,18 @@ function init(map) {
   lootMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
     lootMatrix[i] = new Array(MAX_COL);
+  }
+
+  // 爆波
+  waveMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    waveMatrix[i] = new Array(MAX_COL);
+  }
+
+  // 玩家
+  playerMatrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    playerMatrix[i] = new Array(MAX_COL);
   }
 
   for (i = 0; i < MAX_ROW; i++) {
@@ -695,6 +723,7 @@ function spawnPlayer(id, socket) {
     var spawnX = playerSpawns[numPlayers][0];
     var spawnY = playerSpawns[numPlayers][1];
     players[id] = new PlayerState(id, spawnX, spawnY, 96, 118);
+    playerMatrix[players[id].rowId][players[id].colId] = id;
     numPlayers++;
   }
 
