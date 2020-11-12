@@ -215,7 +215,7 @@ class PlayerState extends EntityState {
     this.maxMaxBombNumber = 8;
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
-    playerMatrix[this.rowId][this.colId] = id;
+    playerMatrix[this.rowId][this.colId][id] = 1;
   }
 
   downPlayer() {
@@ -266,14 +266,14 @@ class PlayerState extends EntityState {
 
     if (waveMatrix[toRowId][toColId]) {
       this.downPlayer();
-    }
+    } 
 
-    playerMatrix[this.rowId][this.colId] = 0;
+    delete playerMatrix[this.rowId][this.colId][this.id];
     this.x = toX;
     this.y = toY;
     this.rowId = toRowId;
     this.colId = toColId;
-    playerMatrix[this.rowId][this.colId] = this.id;
+    playerMatrix[this.rowId][this.colId][this.id] = 1;
 
 
     var lootId = lootMatrix[this.rowId][this.colId];
@@ -513,9 +513,11 @@ class WaveState extends EntityState {
       remove(loots, lootId, lootMatrix);
     }
 
-    var playerId = playerMatrix[this.rowId][this.colId];
-    if (playerId) {
-      players[playerId].downPlayer();
+    var playerIds = Object.keys(playerMatrix[this.rowId][this.colId]);
+    if (playerIds.length) {
+      for (i in playerMatrix[this.rowId][this.colId]) {
+        players[i].downPlayer();
+      }
     }
 
     waveMatrix[this.rowId][this.colId] = this.id;
@@ -572,7 +574,6 @@ function recvMessage(id, msg) {
 // =============================================================================
 //  UTIL
 // =============================================================================
-oldTs = 0;
 idQueue = new Queue(MAX_ID);
 
 function getRandomInt(max) {
@@ -621,6 +622,9 @@ function init(map) {
   playerMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
     playerMatrix[i] = new Array(MAX_COL);
+    for (j = 0; j < MAX_COL; j++) {
+      playerMatrix[i][j] = {};
+    }
   }
 
   for (i = 0; i < MAX_ROW; i++) {
@@ -700,14 +704,8 @@ function processSend() {
   }
 }
 
-function tick(callback, broadcast) {
-  var nowTs = +new Date();
-  var oldTs_ = oldTs || nowTs;
-  var delta = nowTs - oldTs_;
-  oldTs = nowTs;
+function tick(delta, callback, broadcast) {
   update(delta, callback, broadcast);
-
-  return delta;
 }
 
 playerSpawns = [

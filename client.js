@@ -528,13 +528,17 @@ function initGame() {
   playerMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
     playerMatrix[i] = new Array(MAX_COL);
+    for (j = 0; j < MAX_COL; j++) {
+      playerMatrix[i][j] = {};
+    }
   }
 
   // 开始游戏
   Resource.playSnd(types.sound.bgm);
   oldTs = +new Date();
   setInterval(function () {
-    render(tick(handleMessage, serverBroadCast));
+    render(1000.0 / 60);
+    tick(1000.0 / 60, handleMessage, serverBroadCast);
     clientProcessSend();
   }, 1000.0 / 60); // 60FPS 游戏循环
 }
@@ -557,8 +561,8 @@ function render(delta) {
       if (boxMatrix[i][j]) {
         boxes[boxMatrix[i][j]].render(delta);
       }
-      if (playerMatrix[i][j]) {
-        players[playerMatrix[i][j]].render(delta);
+      for (playerId in playerMatrix[i][j]) {
+        players[playerId].render(delta);
       }
     }
   }
