@@ -78,6 +78,22 @@ WIDTH = UNIT_WIDTH * MAX_COL;
 HEIGHT = UNIT_HEIGHT * MAX_ROW;
 MAX_PLAYERS = 4;
 numPlayers = 0;
+// 硬编码地图
+map = [
+  [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+  [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0]
+]
 
 function bind(rowId, colId) {
   return rowId >= 0 && rowId < MAX_ROW && colId >= 0 && colId < MAX_COL;
@@ -216,6 +232,7 @@ class PlayerState extends EntityState {
     this.maxMaxBombNumber = 8;
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
+    this.score = 0;
   }
 
   downPlayer() {
@@ -289,6 +306,7 @@ class PlayerState extends EntityState {
       }
       if (players[id].downed) {
         players[id].revivePlayer();
+        this.score++;
       }
     }
 
@@ -612,7 +630,7 @@ function releaseID(id) {
   idQueue.push(id);
 }
 
-function init(map) {
+function init() {
   prepID();
   // 箱子
   boxMatrix = new Array(MAX_ROW);
@@ -686,6 +704,17 @@ function broadcastState() {
   }
 }
 
+function restartGame() {
+  init();
+  numPlayers = 0;
+  for (i in players) {
+    var spawnX = playerSpawns[numPlayers][0];
+    var spawnY = playerSpawns[numPlayers][1];
+    players[players[i].id] = new PlayerState(players[i].id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
+    numPlayers++;
+  }
+}
+
 function serverUpdate(delta) {
   for (i = 0; i < MAX_ROW; i++) {
     for (j = 0; j < MAX_COL; j++) {
@@ -693,9 +722,15 @@ function serverUpdate(delta) {
     }
   }
 
+  var shouldRestart = false;
   for (id in players) {
     var player = players[id];
     playerMatrix[player.rowId][player.colId][id] = 1;
+    shouldRestart |= player.score >= 3;
+  }
+
+  if (shouldRestart) {
+    restartGame();
   }
 }
 

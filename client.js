@@ -270,7 +270,7 @@ class Player extends Entity {
     }
   }
 }
-localPlayerId = "";
+localPlayerId = '';
 
 // =============================================================================
 //  炸弹
@@ -318,6 +318,7 @@ class Wave extends Entity {
 // =============================================================================
 // 画布
 var ctx;
+var score;
 // 预测补正
 messageSequenceId = 0;
 // 键输入
@@ -346,7 +347,7 @@ function init() {
   initGame();
 
   // websocket
-  var socket = io("ws://192.168.8.191:8081");
+  var socket = io('ws://192.168.8.191:8081');
   socket.on('opcode', function(msg) {
     recvMessage('server', msg);
   });
@@ -399,6 +400,7 @@ function handleMessage(data) {
           player.state.buffer.push({'ts': +new Date(), 'x': remotePlayer.x, 'y': remotePlayer.y,});
         }
 
+        player.state.score = remotePlayer.score;
         player.state.power = remotePlayer.power;
         player.state.currentBombNumber = remotePlayer.currentBombNumber;
         player.state.maxBombNumber = remotePlayer.maxBombNumber;
@@ -481,11 +483,12 @@ function clientProcessSend() {
 }
 
 function initGame() {
-  var canvas = document.getElementById("canvas");
-  ctx = canvas.getContext("2d");
+  var canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
   canvas.width = WIDTH;
   canvas.height = HEIGHT;
-  canvas.style.position = "absolute";
+  canvas.style.position = 'absolute';
+  score = document.getElementById('score');
 
   // 背景
   blockMatrix = new Array(MAX_ROW);
@@ -566,25 +569,31 @@ function render(delta) {
       players[playersToRender[playerId]].render(delta);
     }
   }
+
+  var scoreText = '';
+  for (i in players) {
+    scoreText += players[i].state.score.toString() + '    ';
+  }
+  score.innerHTML = scoreText;
 }
 
 // =============================================================================
 //  载入资源
 // =============================================================================
 Resource.loadSnds([ // [类型ID, 文件, 音量, 是否循环]
-  [        types.sound.bgm,   "bg.ogg", 0.3, 1],
-  [   types.sound.put_bomb,  "lay.wav",   1, 0],
-  [    types.sound.explode,  "exp.wav",   1, 0],
-  [types.sound.pickup_loot, "loot.wav",   1, 0]
+  [        types.sound.bgm,   'bg.ogg', 0.3, 1],
+  [   types.sound.put_bomb,  'lay.wav',   1, 0],
+  [    types.sound.explode,  'exp.wav',   1, 0],
+  [types.sound.pickup_loot, 'loot.wav',   1, 0]
 ]);
 
 Resource.loadPngs([ // [类型ID, 文件]
-  [       types.entity.player,   "remi.png"],
-  [         types.entity.bomb,   "bomb.png"],
-  [         types.entity.wave,   "wave.png"],
-  [        types.entity.block,  "block.png"],
-  [          types.entity.box,    "box.png"],
-  [         types.entity.loot,   "loot.png"],
-  [types.entity.player_downed,   "netu.png"]],
+  [       types.entity.player,   'remi.png'],
+  [         types.entity.bomb,   'bomb.png'],
+  [         types.entity.wave,   'wave.png'],
+  [        types.entity.block,  'block.png'],
+  [          types.entity.box,    'box.png'],
+  [         types.entity.loot,   'loot.png'],
+  [types.entity.player_downed,   'netu.png']],
   init
 );
