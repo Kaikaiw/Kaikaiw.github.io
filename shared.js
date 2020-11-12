@@ -631,7 +631,6 @@ function releaseID(id) {
 }
 
 function init() {
-  prepID(2048);
   // 箱子
   boxMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
@@ -820,3 +819,4 @@ E.handleClientMessage = handleClientMessage;
 E.broadcastState = broadcastState;
 E.serverUpdate = serverUpdate;
 E.SERVER_FRAME = SERVER_FRAME;
+E.prepID = prepID;

@@ -4,6 +4,7 @@ var E = require('./shared.js');
 //  服务端
 // =============================================================================
 function initGame() {
+  E.prepID(E.MAX_ID);
   E.init();
   setInterval(function () {
      E.tick(1000.0 / E.SERVER_FRAME, E.serverUpdate, E.handleClientMessage, E.broadcastState);
