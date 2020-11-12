@@ -215,6 +215,7 @@ class PlayerState extends EntityState {
     this.maxMaxBombNumber = 8;
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
+    playerMatrix[this.rowId][this.colId] = id;
   }
 
   downPlayer() {
@@ -723,7 +724,6 @@ function spawnPlayer(id, socket) {
     var spawnX = playerSpawns[numPlayers][0];
     var spawnY = playerSpawns[numPlayers][1];
     players[id] = new PlayerState(id, spawnX, spawnY, 96, 118);
-    playerMatrix[players[id].rowId][players[id].colId] = id;
     numPlayers++;
   }
 

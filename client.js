@@ -547,10 +547,21 @@ function render(delta) {
   }
 
   for (i in loots) { loots[i].render(delta); }
-  for (i in bombs) { bombs[i].render(delta); }
   for (i in waves) { waves[i].render(delta); }
-  for (i in boxes) { boxes[i].render(delta); }
-  for (i in players) { players[i].render(delta); }
+
+  for (i = 0; i < MAX_ROW; i++) {
+    for (j = 0; j < MAX_COL; j++) {
+      if (bombMatrix[i][j]) {
+        bombs[bombMatrix[i][j]].render(delta);
+      }
+      if (boxMatrix[i][j]) {
+        boxes[boxMatrix[i][j]].render(delta);
+      }
+      if (playerMatrix[i][j]) {
+        players[playerMatrix[i][j]].render(delta);
+      }
+    }
+  }
 }
 
 // =============================================================================
