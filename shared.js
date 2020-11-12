@@ -618,8 +618,8 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-function prepID() {
-  for (i = 1; i <= MAX_ID; i++) {
+function prepID(howMany) {
+  for (i = 1; i <= howMany; i++) {
     idQueue.push(i);
   }
 }
@@ -631,7 +631,7 @@ function releaseID(id) {
 }
 
 function init() {
-  prepID();
+  prepID(2048);
   // 箱子
   boxMatrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
