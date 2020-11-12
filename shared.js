@@ -206,6 +206,7 @@ class PlayerState extends EntityState {
   constructor(id, x, y, sizeX, sizeY){
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
+    this.stackedSpeed = 0;
     this.speed = 0.15;
     this.maxSpeed = 0.30;
     this.power = 1;
@@ -215,12 +216,21 @@ class PlayerState extends EntityState {
     this.maxMaxBombNumber = 8;
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
-    playerMatrix[this.rowId][this.colId][id] = 1;
   }
 
   downPlayer() {
-    this.downed = true;
-    this.speed = 0.01;
+    if (!this.downed) {
+      this.downed = true;
+      this.stackedSpeed = this.speed;
+      this.speed = 0.01;
+    }
+  }
+
+  revivePlayer() {
+    if (this.downed) {
+      this.downed = false;
+      this.speed = this.stackedSpeed;
+    }
   }
 
   pickupLoot(type) {
@@ -247,10 +257,10 @@ class PlayerState extends EntityState {
       toY = Math.max(0, this.y - this.speed * delta);
       break;
     case types.dir.right:
-      toX = Math.min(WIDTH - this.sizeX / 2, this.x + this.speed * delta);
+      toX = Math.min(WIDTH - this.sizeX, this.x + this.speed * delta);
       break;
     case types.dir.down:
-      toY = Math.min(HEIGHT - this.sizeY / 3, this.y + this.speed * delta);
+      toY = Math.min(HEIGHT - this.sizeY, this.y + this.speed * delta);
       break;
     case types.dir.left:
       toX = Math.max(0, this.x - this.speed * delta);
@@ -268,12 +278,19 @@ class PlayerState extends EntityState {
       this.downPlayer();
     } 
 
-    delete playerMatrix[this.rowId][this.colId][this.id];
     this.x = toX;
     this.y = toY;
     this.rowId = toRowId;
     this.colId = toColId;
-    playerMatrix[this.rowId][this.colId][this.id] = 1;
+
+    for (id in playerMatrix[this.rowId][this.colId]) {
+      if (id == this.id) {
+        continue;
+      }
+      if (players[id].downed) {
+        players[id].revivePlayer();
+      }
+    }
 
 
     var lootId = lootMatrix[this.rowId][this.colId];
@@ -377,6 +394,7 @@ class BombState extends EntityState {
     // 中
     var id = getID();
     waves[id] = new WaveState(id, this.rowId, this.colId, types.dir.up);
+    waveMatrix[this.rowId][this.colId] = id;
 
     var r = 0;
     var c = 0;
@@ -393,6 +411,7 @@ class BombState extends EntityState {
       }
       var id = getID();
       waves[id] = new WaveState(id, r, this.colId, types.dir.up);
+      waveMatrix[r][this.colId] = id;
     }
     // 下
     for (r = this.rowId + 1; r <= this.rowId + this.power; r++) {
@@ -406,6 +425,7 @@ class BombState extends EntityState {
       }
       var id = getID();
       waves[id] = new WaveState(id, r, this.colId, types.dir.down);
+      waveMatrix[r][this.colId] = id;
     }
     // 左
     for (c = this.colId - 1; c >= this.colId - this.power; c--) {
@@ -419,6 +439,7 @@ class BombState extends EntityState {
       }
       var id = getID();
       waves[id] = new WaveState(id, this.rowId, c, types.dir.left);
+      waveMatrix[this.rowId][c] = id;
     }
     // 右
     for (c = this.colId + 1; c <= this.colId + this.power; c++) {
@@ -432,6 +453,7 @@ class BombState extends EntityState {
       }
       var id = getID();
       waves[id] = new WaveState(id, this.rowId, c, types.dir.right);
+      waveMatrix[this.rowId][c] = id;
     }
   }
 
@@ -515,12 +537,10 @@ class WaveState extends EntityState {
 
     var playerIds = Object.keys(playerMatrix[this.rowId][this.colId]);
     if (playerIds.length) {
-      for (i in playerMatrix[this.rowId][this.colId]) {
-        players[i].downPlayer();
+      for (i in playerIds) {
+        players[playerIds[i]].downPlayer();
       }
     }
-
-    waveMatrix[this.rowId][this.colId] = this.id;
   }
 
   update(delta) {
@@ -658,7 +678,7 @@ function handleClientMessage(data) {
 
 function broadcastState() {
   for (id in players) {
-    sendMessage({to: id, data: { opcode: types.opcode.player, players: players,}});
+    sendMessage({to: id, data: { opcode: types.opcode.player, players: players, playerMatrix: playerMatrix}});
     sendMessage({to: id, data: { opcode: types.opcode.bomb, bombs: bombs,}});
     sendMessage({to: id, data: { opcode: types.opcode.wave, waves: waves,}});
     sendMessage({to: id, data: { opcode: types.opcode.box, boxes: boxes,}});
@@ -666,11 +686,26 @@ function broadcastState() {
   }
 }
 
-function update(delta, callback, broadcast) {
+function serverUpdate(delta) {
+  for (i = 0; i < MAX_ROW; i++) {
+    for (j = 0; j < MAX_COL; j++) {
+      playerMatrix[i][j] = {};
+    }
+  }
+
+  for (id in players) {
+    var player = players[id];
+    playerMatrix[player.rowId][player.colId][id] = 1;
+  }
+}
+
+function update(delta, serverUpdateCallback, callback, broadcast) {
   // 接收网络消息
   while (!msgQueue.empty()) {
     callback(msgQueue.shift()); // handleClientMessage
   }
+
+  serverUpdateCallback(delta);
 
   // 更新玩家
   for (i in players) { players[i].update(delta); }
@@ -704,8 +739,8 @@ function processSend() {
   }
 }
 
-function tick(delta, callback, broadcast) {
-  update(delta, callback, broadcast);
+function tick(delta, serverUpdateCallback, callback, broadcast) {
+  update(delta, serverUpdateCallback, callback, broadcast);
 }
 
 playerSpawns = [
@@ -721,7 +756,7 @@ function spawnPlayer(id, socket) {
   if (!(id in players) && numPlayers < MAX_PLAYERS) {
     var spawnX = playerSpawns[numPlayers][0];
     var spawnY = playerSpawns[numPlayers][1];
-    players[id] = new PlayerState(id, spawnX, spawnY, 96, 118);
+    players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
     numPlayers++;
   }
 
@@ -741,7 +776,6 @@ E.HEIGHT = HEIGHT;
 E.UNIT_WIDTH = UNIT_WIDTH;
 E.UNIT_HEIGHT = UNIT_HEIGHT;
 E.init = init;
-E.update = update;
 E.tick = tick;
 E.spawnPlayer = spawnPlayer;
 E.sendMessage = sendMessage;
@@ -749,4 +783,5 @@ E.recvMessage = recvMessage;
 E.processSend = processSend;
 E.handleClientMessage = handleClientMessage;
 E.broadcastState = broadcastState;
+E.serverUpdate = serverUpdate;
 E.SERVER_FRAME = SERVER_FRAME;

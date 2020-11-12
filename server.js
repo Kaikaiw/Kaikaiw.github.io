@@ -24,7 +24,7 @@ function initGame() {
   E.init(map);
 
   setInterval(function () {
-     E.tick(1000.0 / E.SERVER_FRAME, E.handleClientMessage, E.broadcastState);
+     E.tick(1000.0 / E.SERVER_FRAME, E.serverUpdate, E.handleClientMessage, E.broadcastState);
      E.processSend(); 
   }, 1000.0 / E.SERVER_FRAME);
 }

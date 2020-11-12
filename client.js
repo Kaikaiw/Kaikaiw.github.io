@@ -198,8 +198,7 @@ class Player extends Entity {
     super();
     this.state = new PlayerState(id, x, y, sizeX, sizeY);
     // 魔法数字...
-    this.sprite = new Sprite(
-        types.entity.player, sizeX, sizeY, UNIT_WIDTH * 1.5, UNIT_HEIGHT * 1.875);
+    this.sprite = new Sprite(types.entity.player, 96, 118, 80, 100);
     this.sprite.maxCycle = 4;
     this.sprite.frameVector = [1,2,0,3];
     this.sprite.cycleTime = 170; // ms
@@ -210,15 +209,17 @@ class Player extends Entity {
   downPlayer() {
     this.state.downPlayer();
     // 魔法数字...
-    this.sprite = new Sprite(
-        types.entity.player_downed,
-        74,
-        83,
-        UNIT_WIDTH * 1.5,
-        UNIT_HEIGHT * 1.875
-    );
-    this.sprite.maxCycle = 4;
+    this.sprite = new Sprite(types.entity.player_downed, 74, 83, 74, 83);
     this.sprite.cycleTime = 200;
+    this.sprite.maxCycle = 4;
+  }
+
+  revivePlayer() {
+    this.state.revivePlayer();
+    this.sprite = new Sprite(types.entity.player, 96, 118, 80, 100);
+    this.sprite.frameVector = [1,2,0,3];
+    this.sprite.cycleTime = 170; // ms
+    this.sprite.maxCycle = 4;
   }
 
   applyInput(input) {
@@ -227,10 +228,7 @@ class Player extends Entity {
 
   update(delta) {
     super.update(delta);
-
-    if (!this.state.downed) {
-      this.sprite.updateDir(this.state.dir);
-    }
+    this.sprite.updateDir(this.state.dir);
 
     if (this.state.id != localPlayerId) {
       return;
@@ -281,7 +279,7 @@ class Bomb extends Entity {
   constructor(id, x, y) {
     super();
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.bomb, 64, 64, 64, 64);
+    this.sprite = new Sprite(types.entity.bomb, 64, 64, 72, 72);
     this.sprite.cycleTime = 150;
     this.sprite.maxCycle = 3;
     this.state = new BombState(id, x, y, 0);
@@ -291,7 +289,6 @@ class Bomb extends Entity {
 
   update(delta) {
     this.sprite.update(delta);
-    // pass...
   }
 }
 
@@ -377,7 +374,6 @@ function handleMessage(data) {
         if (!(id in players)) { // 创建玩家
           players[id] = new Player(
             id, remotePlayer.x, remotePlayer.y, remotePlayer.sizeX, remotePlayer.sizeY);
-          players[id].state.downPlayer = () => {};
         }
 
         var player = players[id];
@@ -406,11 +402,14 @@ function handleMessage(data) {
         player.state.power = remotePlayer.power;
         player.state.currentBombNumber = remotePlayer.currentBombNumber;
         player.state.maxBombNumber = remotePlayer.maxBombNumber;
+
         if (!player.state.downed && remotePlayer.downed) {
-          player.state.downed = true;
           player.downPlayer();
+        } if (player.state.downed && !remotePlayer.downed) {
+          player.revivePlayer();
         }
       }
+      playerMatrix = msg.playerMatrix;
     break;
     case types.opcode.bomb:
       for (id in bombs) {
@@ -475,10 +474,6 @@ function handleMessage(data) {
   }
 }
 
-function serverBroadCast() {
-  // pass
-}
-
 function clientProcessSend() {
   while (!sendQueue.empty()) {
     server.emit('opcode', sendQueue.shift());
@@ -538,7 +533,7 @@ function initGame() {
   oldTs = +new Date();
   setInterval(function () {
     render(1000.0 / 60);
-    tick(1000.0 / 60, handleMessage, serverBroadCast);
+    tick(1000.0 / 60, () => {}, handleMessage, () => {});
     clientProcessSend();
   }, 1000.0 / 60); // 60FPS 游戏循环
 }
@@ -554,6 +549,7 @@ function render(delta) {
   for (i in waves) { waves[i].render(delta); }
 
   for (i = 0; i < MAX_ROW; i++) {
+    var playersToRender = [];
     for (j = 0; j < MAX_COL; j++) {
       if (bombMatrix[i][j]) {
         bombs[bombMatrix[i][j]].render(delta);
@@ -562,8 +558,12 @@ function render(delta) {
         boxes[boxMatrix[i][j]].render(delta);
       }
       for (playerId in playerMatrix[i][j]) {
-        players[playerId].render(delta);
+        playersToRender.push(playerId);
       }
+    }
+
+    for (playerId in playersToRender) {
+      players[playersToRender[playerId]].render(delta);
     }
   }
 }
