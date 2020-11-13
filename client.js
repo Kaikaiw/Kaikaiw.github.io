@@ -498,38 +498,11 @@ function initGame() {
       blockMatrix[i][j] = new Block(j * UNIT_WIDTH, i * UNIT_HEIGHT);
   }
 
-  // 箱子
-  boxMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    boxMatrix[i] = new Array(MAX_COL);
-  }
-
-  // 炸弹
-  bombMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    bombMatrix[i] = new Array(MAX_COL);
-  }
-
-  // 强化
-  lootMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    lootMatrix[i] = new Array(MAX_COL);
-  }
-
-  // 爆波
-  waveMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    waveMatrix[i] = new Array(MAX_COL);
-  }
-
-  // 玩家
-  playerMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    playerMatrix[i] = new Array(MAX_COL);
-    for (j = 0; j < MAX_COL; j++) {
-      playerMatrix[i][j] = {};
-    }
-  }
+  boxMatrix = clearMatrix();
+  bombMatrix = clearMatrix();
+  lootMatrix = clearMatrix();
+  waveMatrix = clearMatrix();
+  playerMatrix = clearMatrix({});
 
   // 开始游戏
   Resource.playSnd(types.sound.bgm);

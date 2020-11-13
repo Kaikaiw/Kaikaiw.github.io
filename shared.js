@@ -630,41 +630,31 @@ function releaseID(id) {
   idQueue.push(id);
 }
 
+function clearMatrix(obj) {
+  matrix = new Array(MAX_ROW);
+  for (i = 0; i < MAX_ROW; i++) {
+    matrix[i] = new Array(MAX_COL);
+    for (j = 0; j < MAX_COL; j++) {
+      if (typeof obj != 'undefined') {
+        matrix[i][j] = obj;
+      } else {
+        matrix[i][j] = 0;
+      }
+    }
+  }
+
+  return matrix;
+}
+
 function init() {
-  // 箱子
-  boxMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    boxMatrix[i] = new Array(MAX_COL);
-  }
+  boxMatrix = clearMatrix();
+  bombMatrix = clearMatrix();
+  lootMatrix = clearMatrix();
+  waveMatrix = clearMatrix();
+  playerMatrix = clearMatrix({});
 
-  // 炸弹
-  bombMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    bombMatrix[i] = new Array(MAX_COL);
-  }
-
-  // 强化
-  lootMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    lootMatrix[i] = new Array(MAX_COL);
-  }
   for (i in loots) {
     delete loots[i];
-  }
-
-  // 爆波
-  waveMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    waveMatrix[i] = new Array(MAX_COL);
-  }
-
-  // 玩家
-  playerMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
-    playerMatrix[i] = new Array(MAX_COL);
-    for (j = 0; j < MAX_COL; j++) {
-      playerMatrix[i][j] = {};
-    }
   }
 
   for (i = 0; i < MAX_ROW; i++) {
