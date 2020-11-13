@@ -414,64 +414,30 @@ class BombState extends EntityState {
     waves[id] = new WaveState(id, this.rowId, this.colId, types.dir.up);
     waveMatrix[this.rowId][this.colId] = id;
 
-    var r = 0;
-    var c = 0;
+    var directions = [ // [direction, start_i, start_j, end_i, end_j, step_i, step_j, dir_type]
+      [0, this.rowId + 1, this.colId, this.rowId + this.power, this.colId + this.power,  1,  0, types.dir.down],
+      [1, this.rowId - 1, this.colId, this.rowId - this.power, this.colId - this.power, -1,  0, types.dir.up],
+      [0, this.rowId, this.colId + 1, this.rowId + this.power, this.colId + this.power,  0,  1, types.dir.right],
+      [1, this.rowId, this.colId - 1, this.rowId - this.power, this.colId - this.power,  0, -1, types.dir.left],
+    ];
 
-    // 上
-    for (r = this.rowId - 1; r >= this.rowId - this.power; r--) {
-      if (!bind(r, this.colId)) {
-        break;
+    for (var dir = 0; dir < directions.length; dir++) {
+      var d = directions[dir];
+      for (var i = d[1], j = d[2]; (d[0] ? i >= d[3] && j >= d[4] : i <= d[3] && j <= d[4]);) {
+        if (!bind(i, j)) {
+          break;
+        }
+        if (boxMatrix[i][j]) {
+          var id = boxMatrix[i][j];
+          boxes[id].destroyBox();
+          break;
+        }
+        var id = getID();
+        waves[id] = new WaveState(id, i, j, d[7]);
+        waveMatrix[i][j] = id;
+        i += d[5];
+        j += d[6];
       }
-      if (boxMatrix[r][this.colId]) {
-        var id = boxMatrix[r][this.colId];
-        boxes[id].destroyBox();
-        break;
-      }
-      var id = getID();
-      waves[id] = new WaveState(id, r, this.colId, types.dir.up);
-      waveMatrix[r][this.colId] = id;
-    }
-    // 下
-    for (r = this.rowId + 1; r <= this.rowId + this.power; r++) {
-      if (!bind(r, this.colId)) {
-        break;
-      }
-      if (boxMatrix[r][this.colId]) {
-        var id = boxMatrix[r][this.colId];
-        boxes[id].destroyBox();
-        break;
-      }
-      var id = getID();
-      waves[id] = new WaveState(id, r, this.colId, types.dir.down);
-      waveMatrix[r][this.colId] = id;
-    }
-    // 左
-    for (c = this.colId - 1; c >= this.colId - this.power; c--) {
-      if (!bind(this.rowId, c)) {
-        break;
-      }
-      if (boxMatrix[this.rowId][c]) {
-        var id = boxMatrix[this.rowId][c];
-        boxes[id].destroyBox();
-        break;
-      }
-      var id = getID();
-      waves[id] = new WaveState(id, this.rowId, c, types.dir.left);
-      waveMatrix[this.rowId][c] = id;
-    }
-    // 右
-    for (c = this.colId + 1; c <= this.colId + this.power; c++) {
-      if (!bind(this.rowId, c)) {
-        break;
-      }
-      if (boxMatrix[this.rowId][c]) {
-        var id = boxMatrix[this.rowId][c];
-        boxes[id].destroyBox();
-        break;
-      }
-      var id = getID();
-      waves[id] = new WaveState(id, this.rowId, c, types.dir.right);
-      waveMatrix[this.rowId][c] = id;
     }
   }
 
@@ -498,29 +464,23 @@ class BombState extends EntityState {
 
   // 放置炸弹时, 尝试链接其他炸弹, 达到链爆效果
   doChain() {
-    // 向下链接
-    for (i = this.rowId + 1;
-        bind(i, this.colId) &&
-        !this.blocked(i, this.colId) && i <= this.rowId + this.power; i++) {
-      this.tryChain(i, this.colId);
-    }
-    // 向上链接
-    for (i = this.rowId - 1;
-        bind(i, this.colId) &&
-        !this.blocked(i, this.colId) && i >= this.rowId - this.power; i--) {
-      this.tryChain(i, this.colId);
-    }
-    // 向右链接
-    for (j = this.colId + 1;
-        bind(this.rowId, j) &&
-        !this.blocked(this.rowId, j) && j <= this.colId + this.power; j++) {
-      this.tryChain(this.rowId, j);
-    }
-    // 向左链接
-    for (j = this.colId - 1;
-        bind(this.rowId, j) &&
-        !this.blocked(this.rowId, j) && j >= this.colId - this.power; j--) {
-      this.tryChain(this.rowId, j);
+    var directions = [ // [direction, start_i, start_j, end_i, end_j, step_i, step_j]
+      [0, this.rowId + 1, this.colId, this.rowId + this.power, this.colId + this.power,  1,  0],
+      [1, this.rowId - 1, this.colId, this.rowId - this.power, this.colId - this.power, -1,  0],
+      [0, this.rowId, this.colId + 1, this.rowId + this.power, this.colId + this.power,  0,  1],
+      [1, this.rowId, this.colId - 1, this.rowId - this.power, this.colId - this.power,  0, -1],
+    ];
+
+    for (var dir = 0; dir < directions.length; dir++) {
+      var d = directions[dir];
+      for (var i = d[1], j = d[2]; (d[0] ? i >= d[3] && j >= d[4] : i <= d[3] && j <= d[4]);) {
+        if (!bind(i, j) || this.blocked(i, j)) {
+          break;
+        }
+        this.tryChain(i, j);
+        i += d[5];
+        j += d[6];
+      }
     }
   }
 
