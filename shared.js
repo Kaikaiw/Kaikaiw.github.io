@@ -725,7 +725,7 @@ function serverUpdate(delta) {
   for (id in players) {
     var player = players[id];
     playerMatrix[player.rowId][player.colId][id] = 1;
-    shouldRestart |= player.score >= 3;
+    shouldRestart |= player.score >= 5;
   }
 
   if (shouldRestart) {

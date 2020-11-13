@@ -171,6 +171,10 @@ class Box extends Entity {
     this.sprite.cycleTime = -1;
     this.sprite.maxCycle = 1;
   }
+
+  update(delta) {
+    this.sprite.update(delta);
+  }
 }
 
 // =============================================================================
