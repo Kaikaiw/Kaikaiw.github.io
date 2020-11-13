@@ -648,6 +648,9 @@ function init() {
   for (i = 0; i < MAX_ROW; i++) {
     lootMatrix[i] = new Array(MAX_COL);
   }
+  for (i in loots) {
+    delete loots[i];
+  }
 
   // 爆波
   waveMatrix = new Array(MAX_ROW);
