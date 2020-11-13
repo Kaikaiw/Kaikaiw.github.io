@@ -572,7 +572,7 @@ function render(delta) {
 
   var scoreText = '';
   for (i in players) {
-    scoreText += players[i].state.score.toString() + '    ';
+    scoreText += players[i].state.score.toString() + ' ';
   }
   score.innerHTML = scoreText;
 }
