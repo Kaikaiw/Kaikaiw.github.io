@@ -407,7 +407,9 @@ class BombState extends EntityState {
 
   doBomb() {
     remove(bombs, this.id, bombMatrix);
-    players[this.owner].currentBombNumber--;
+    if (this.owner in players) {
+      players[this.owner].currentBombNumber--;
+    }
 
     // 中
     var id = getID();
@@ -722,7 +724,9 @@ function update(delta, serverUpdateCallback, callback, broadcast) {
 function processSend() {
   while (!sendQueue.empty()) {
     var msg = sendQueue.shift();
-    clients[msg.to].emit('opcode', msg.data);
+    if (msg.to in clients) {
+      clients[msg.to].emit('opcode', msg.data);
+    }
   }
 }
 
@@ -745,9 +749,21 @@ function spawnPlayer(id, socket) {
     var spawnY = playerSpawns[numPlayers][1];
     players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
     numPlayers++;
+  } else {
+    socket.disconnect();
   }
 
   sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
+}
+
+function disconnectPlayer(id) {
+  if (id in clients) {
+    delete clients[id];
+  }
+  if (id in players) {
+    delete players[id];
+  }
+  numPlayers--;
 }
 
 // =============================================================================
@@ -773,3 +789,4 @@ E.broadcastState = broadcastState;
 E.serverUpdate = serverUpdate;
 E.SERVER_FRAME = SERVER_FRAME;
 E.prepID = prepID;
+E.disconnectPlayer = disconnectPlayer;

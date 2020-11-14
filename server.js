@@ -22,6 +22,9 @@ function init() {
     socket.on('opcode', (msg) => {
       E.recvMessage(id, msg);
     });
+    socket.on('disconnect', (reason) => {
+      E.disconnectPlayer(id);
+    })
   });
 }
 
