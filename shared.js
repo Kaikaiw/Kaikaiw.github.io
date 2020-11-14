@@ -672,11 +672,12 @@ function broadcastState() {
 function restartGame() {
   init();
   numPlayers = 0;
+  for (spawn in playerSpawns) {
+    playerSpawns[spawn].spawn = true;
+  }
+  spawnedPlayers = {};
   for (i in players) {
-    var spawnX = playerSpawns[numPlayers][0];
-    var spawnY = playerSpawns[numPlayers][1];
-    players[players[i].id] = new PlayerState(players[i].id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
-    numPlayers++;
+    doSpawn(i);
   }
 }
 
@@ -753,22 +754,29 @@ playerSpawns = [
 ];
 spawnedPlayers = {};
 
+function doSpawn(id) {
+  for (var i = 0; i < playerSpawns.length; i++) {
+    var spawn = playerSpawns[i];
+    if (!spawn.spawn) {
+      continue;
+    }
+    var spawnX = spawn.where[0];
+    var spawnY = spawn.where[1];
+    players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
+    spawnedPlayers[id] = i;
+    spawn.spawn = false;
+    numPlayers++;
+    return true;
+  }
+
+  return false;
+}
+
 function spawnPlayer(id, socket) {
   if (!(id in clients) && numPlayers < MAX_PLAYERS) {
     clients[id] = socket;
-    for (var i = 0; i < playerSpawns.length; i++) {
-      var spawn = playerSpawns[i];
-      if (!spawn.spawn) {
-        continue;
-      }
-      var spawnX = spawn.where[0];
-      var spawnY = spawn.where[1];
-      players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
-      spawnedPlayers[id] = i;
-      spawn.spawn = false;
-      numPlayers++;
+    if (doSpawn(id)) {
       sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
-      break;
     }
   } else {
     socket.disconnect();
@@ -781,6 +789,7 @@ function disconnectPlayer(id) {
     delete players[id];
     numPlayers--;
     playerSpawns[spawnedPlayers[id]].spawn = true;
+    delete spawnedPlayers[id];
   }
 }
 
