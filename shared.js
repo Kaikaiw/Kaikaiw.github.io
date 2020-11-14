@@ -753,25 +753,21 @@ playerSpawns = [
 ];
 
 function spawnPlayer(id, socket) {
-  clients[id] = socket;
-
-  if (!(id in players) && numPlayers < MAX_PLAYERS) {
+  if (!(id in clients) && numPlayers < MAX_PLAYERS) {
+    clients[id] = socket;
     var spawnX = playerSpawns[numPlayers][0];
     var spawnY = playerSpawns[numPlayers][1];
     players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
     numPlayers++;
+    sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
   } else {
     socket.disconnect();
   }
-
-  sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
 }
 
 function disconnectPlayer(id) {
   if (id in clients) {
     delete clients[id];
-  }
-  if (id in players) {
     delete players[id];
     numPlayers--;
   }
