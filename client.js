@@ -347,7 +347,7 @@ function init() {
   initGame();
 
   // websocket
-  var socket = io('ws://192.168.8.191:8081');
+  var socket = io('ws://42.192.7.180:8081');
   socket.on('opcode', function(msg) {
     recvMessage('server', msg);
   });

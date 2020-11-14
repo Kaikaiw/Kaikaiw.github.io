@@ -746,20 +746,30 @@ function tick(delta, serverUpdateCallback, callback, broadcast) {
 }
 
 playerSpawns = [
-  [0, UNIT_HEIGHT * (MAX_ROW - 1)],
-  [0, 0],
-  [UNIT_WIDTH * (MAX_COL - 1), 0],
-  [UNIT_WIDTH * (MAX_COL - 1), UNIT_HEIGHT * (MAX_ROW - 1)]
+  {spawn: true, where: [0, UNIT_HEIGHT * (MAX_ROW - 1)]},
+  {spawn: true, where: [0, 0]},
+  {spawn: true, where: [UNIT_WIDTH * (MAX_COL - 1), 0]},
+  {spawn: true, where: [UNIT_WIDTH * (MAX_COL - 1), UNIT_HEIGHT * (MAX_ROW - 1)]},
 ];
+spawnedPlayers = {};
 
 function spawnPlayer(id, socket) {
   if (!(id in clients) && numPlayers < MAX_PLAYERS) {
     clients[id] = socket;
-    var spawnX = playerSpawns[numPlayers][0];
-    var spawnY = playerSpawns[numPlayers][1];
-    players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
-    numPlayers++;
-    sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
+    for (var i = 0; i < playerSpawns.length; i++) {
+      var spawn = playerSpawns[i];
+      if (!spawn.spawn) {
+        continue;
+      }
+      var spawnX = spawn.where[0];
+      var spawnY = spawn.where[1];
+      players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
+      spawnedPlayers[id] = i;
+      spawn.spawn = false;
+      numPlayers++;
+      sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
+      break;
+    }
   } else {
     socket.disconnect();
   }
@@ -770,6 +780,7 @@ function disconnectPlayer(id) {
     delete clients[id];
     delete players[id];
     numPlayers--;
+    playerSpawns[spawnedPlayers[id]].spawn = true;
   }
 }
 
