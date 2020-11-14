@@ -304,7 +304,7 @@ class PlayerState extends EntityState {
       if (id == this.id) {
         continue;
       }
-      if (players[id].downed) {
+      if (id in players && players[id].downed) {
         players[id].revivePlayer();
         this.score++;
       }
@@ -408,7 +408,11 @@ class BombState extends EntityState {
   doBomb() {
     remove(bombs, this.id, bombMatrix);
     if (this.owner in players) {
-      players[this.owner].currentBombNumber--;
+      var player = players[this.owner];
+      player.currentBombNumber--;
+      if (player.currentBombNumber < 0) {
+        player.currentBombNumber = 0;
+      }
     }
 
     // 中
@@ -638,12 +642,16 @@ function handleClientMessage(data) {
 
   switch (msg.opcode) {
   case types.opcode.move:
-    var player = players[id];
-    player.applyInput(msg.input);
-    player.ackSeqId = msg.input.seqId;
+    if (id in players) {
+      var player = players[id];
+      player.applyInput(msg.input);
+      player.ackSeqId = msg.input.seqId;
+    }
   break;
   case types.opcode.put_bomb:
-    players[id].putBomb();
+    if (id in players) {
+      players[id].putBomb();
+    }
   break;
   }
 }
