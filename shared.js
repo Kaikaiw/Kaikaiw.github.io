@@ -762,8 +762,8 @@ function disconnectPlayer(id) {
   }
   if (id in players) {
     delete players[id];
+    numPlayers--;
   }
-  numPlayers--;
 }
 
 // =============================================================================
