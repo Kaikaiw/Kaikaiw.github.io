@@ -4,7 +4,7 @@
   "description": "Game",
   "main": "server.js",
   "dependencies": {
-    "socket.io": "^2.3.0"
+    "socket.io": "2.2.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
