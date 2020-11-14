@@ -622,6 +622,9 @@ function init() {
   for (i in loots) {
     delete loots[i];
   }
+  for (i in boxes) {
+    delete boxes[i];
+  }
 
   for (i = 0; i < MAX_ROW; i++) {
     for (j = 0; j < MAX_COL; j++) {
