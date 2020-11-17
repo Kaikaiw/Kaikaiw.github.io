@@ -494,9 +494,9 @@ function initGame() {
 
   // 背景
   blockMatrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
+  for (var i = 0; i < MAX_ROW; i++) {
     blockMatrix[i] = new Array(MAX_COL);
-    for (j = 0; j < MAX_COL; j++)
+    for (var j = 0; j < MAX_COL; j++)
       blockMatrix[i][j] = new Block(j * UNIT_WIDTH, i * UNIT_HEIGHT);
   }
 
@@ -518,8 +518,8 @@ function initGame() {
 }
 
 function render(delta) {
-  for (i = 0; i < MAX_ROW; i++) {
-    for (j = 0; j < MAX_COL; j++) {
+  for (var i = 0; i < MAX_ROW; i++) {
+    for (var j = 0; j < MAX_COL; j++) {
       blockMatrix[i][j].render(delta);
     }
   }
@@ -527,9 +527,9 @@ function render(delta) {
   for (i in loots) { loots[i].render(delta); }
   for (i in waves) { waves[i].render(delta); }
 
-  for (i = 0; i < MAX_ROW; i++) {
+  for (var i = 0; i < MAX_ROW; i++) {
     var playersToRender = [];
-    for (j = 0; j < MAX_COL; j++) {
+    for (var j = 0; j < MAX_COL; j++) {
       if (bombMatrix[i][j]) {
         bomb.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
       }

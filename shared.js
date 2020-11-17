@@ -589,7 +589,7 @@ function getRandomInt(max) {
 }
 
 function prepID(howMany) {
-  for (i = 1; i <= howMany; i++) {
+  for (var i = 1; i <= howMany; i++) {
     idQueue.push(i);
   }
 }
@@ -601,7 +601,7 @@ function releaseID(id) {
 }
 
 function matrixToIntArray(matrix) {
-  var array = []
+  var array = [];
 
   for (var i = 0; i < MAX_ROW; i++) {
     var rowMask = 0;
@@ -633,7 +633,7 @@ function intArrayToMatrix(array) {
 
 function clearMatrix(obj) {
   matrix = new Array(MAX_ROW);
-  for (i = 0; i < MAX_ROW; i++) {
+  for (var i = 0; i < MAX_ROW; i++) {
     matrix[i] = new Array(MAX_COL);
     for (j = 0; j < MAX_COL; j++) {
       if (typeof obj != 'undefined') {
@@ -661,8 +661,8 @@ function init() {
     delete boxes[i];
   }
 
-  for (i = 0; i < MAX_ROW; i++) {
-    for (j = 0; j < MAX_COL; j++) {
+  for (var i = 0; i < MAX_ROW; i++) {
+    for (var j = 0; j < MAX_COL; j++) {
       if (map[i][j] == 1) {
         var id = getID();
         boxes[id] = new BoxState(id, j * UNIT_WIDTH, i * UNIT_HEIGHT);
@@ -735,8 +735,8 @@ function update(delta, serverUpdateCallback, callback, broadcast) {
   }
 
   serverUpdateCallback(delta);
-  for (i = 0; i < MAX_ROW; i++) {
-    for (j = 0; j < MAX_COL; j++) {
+  for (var i = 0; i < MAX_ROW; i++) {
+    for (var j = 0; j < MAX_COL; j++) {
       playerMatrix[i][j] = {};
     }
   }
