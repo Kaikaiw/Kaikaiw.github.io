@@ -682,6 +682,7 @@ function handleClientMessage(data) {
   case types.opcode.move:
     if (id in players) {
       var player = players[id];
+      msg.input.delta = 1000.0 / 60;
       player.applyInput(msg.input);
       player.ackSeqId = msg.input.seqId;
     }
@@ -730,8 +731,19 @@ function serverUpdate(delta) {
 
 function update(delta, serverUpdateCallback, callback, broadcast) {
   // 接收网络消息
+  var moveCtr = {};
   while (!msgQueue.empty()) {
-    callback(msgQueue.shift()); // handleClientMessage
+    var msg = msgQueue.shift();
+    if (msg.msg.opcode == types.opcode.move) {
+      if (!(msg.id in moveCtr)) {
+        moveCtr[msg.id] = 0;
+      }
+      moveCtr[msg.id]++;
+      if (moveCtr[msg.id] > 60.0 / SERVER_FRAME) {
+        continue;
+      }
+    }
+    callback(msg); // handleClientMessage
   }
 
   serverUpdateCallback(delta);

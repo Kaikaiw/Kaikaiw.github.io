@@ -240,16 +240,12 @@ class Player extends Entity {
 
     var input = {};
     if (keyPressed[types.key.up]) {
-      input.delta = delta;
       input.key = types.key.up;
     } else if (keyPressed[types.key.right]) {
-      input.delta = delta;
       input.key = types.key.right;
     } else if (keyPressed[types.key.down]) {
-      input.delta = delta;
       input.key = types.key.down;
     } else if (keyPressed[types.key.left]) {
-      input.delta = delta;
       input.key = types.key.left;
     }
 
@@ -263,15 +259,16 @@ class Player extends Entity {
     }
 
     if (Object.keys(input).length != 0 && !shouldProcessSpace) {
-      this.applyInput(input);
-
       input.seqId = inputSeqId++;
       sendMessage({
         'opcode': types.opcode.move,
         'input': input,
       });
 
-      pendingInputs.push(input);
+      var localInput = Object.assign({}, input);
+      localInput.delta = delta;
+      this.applyInput(localInput);
+      pendingInputs.push(localInput);
     }
   }
 }
