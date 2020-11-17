@@ -573,22 +573,8 @@ function sendMessage(msg) {
   }
 }
 
-var moveMessageTimes = {};
 function recvMessage(id, msg) {
   if (!msgQueue.full()) {
-    if (msg.opcode == types.opcode.move) {
-      var nowTs = +new Date();
-      if (!(id in moveMessageTimes)) {
-        moveMessageTimes[id] = nowTs;
-      } else {
-        var delta = nowTs - moveMessageTimes[id];
-        if (delta < 10) {
-          return;
-        } else {
-          moveMessageTimes[id] = nowTs;
-        }
-      }
-    }
     msgQueue.push({id: id, msg: msg});
   }
 }
@@ -843,7 +829,6 @@ function disconnectPlayer(id) {
     numPlayers--;
     playerSpawns[spawnedPlayers[id]].spawn = true;
     delete spawnedPlayers[id];
-    delete moveMessageTimes[id];
   }
 }
 
