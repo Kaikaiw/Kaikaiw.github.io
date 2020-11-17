@@ -661,7 +661,7 @@ function handleClientMessage(data) {
 
 function broadcastState() {
   for (id in players) {
-    sendMessage({to: id, data: { opcode: types.opcode.player, players: players, playerMatrix: playerMatrix}});
+    sendMessage({to: id, data: { opcode: types.opcode.player, players: players,}});
     sendMessage({to: id, data: { opcode: types.opcode.bomb, bombs: bombs,}});
     sendMessage({to: id, data: { opcode: types.opcode.wave, waves: waves,}});
     sendMessage({to: id, data: { opcode: types.opcode.box, boxes: boxes,}});
@@ -682,16 +682,9 @@ function restartGame() {
 }
 
 function serverUpdate(delta) {
-  for (i = 0; i < MAX_ROW; i++) {
-    for (j = 0; j < MAX_COL; j++) {
-      playerMatrix[i][j] = {};
-    }
-  }
-
   var shouldRestart = false;
   for (id in players) {
     var player = players[id];
-    playerMatrix[player.rowId][player.colId][id] = 1;
     shouldRestart |= player.score >= 3;
   }
 
@@ -707,6 +700,17 @@ function update(delta, serverUpdateCallback, callback, broadcast) {
   }
 
   serverUpdateCallback(delta);
+  for (i = 0; i < MAX_ROW; i++) {
+    for (j = 0; j < MAX_COL; j++) {
+      playerMatrix[i][j] = {};
+    }
+  }
+  for (id in players) {
+    var player = players[id];
+    var rowId = typeof player.state == 'undefined' ? player.rowId : player.state.rowId;
+    var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
+    playerMatrix[rowId][colId][id] = 1;
+  }
 
   // 更新玩家
   for (i in players) { players[i].update(delta); }

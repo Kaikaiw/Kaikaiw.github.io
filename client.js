@@ -411,7 +411,6 @@ function handleMessage(data) {
           player.revivePlayer();
         }
       }
-      playerMatrix = msg.playerMatrix;
     break;
     case types.opcode.bomb:
       for (id in bombs) {
