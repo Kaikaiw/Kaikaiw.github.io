@@ -198,7 +198,7 @@ class Player extends Entity {
     super();
     this.state = new PlayerState(id, x, y, sizeX, sizeY);
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.player, 96, 118, 80, 100);
+    this.sprite = new Sprite(types.entity.player, 96, 118, 96, 118);
     this.sprite.maxCycle = 4;
     this.sprite.frameVector = [1,2,0,3];
     this.sprite.cycleTime = 170; // ms
@@ -216,7 +216,7 @@ class Player extends Entity {
 
   revivePlayer() {
     this.state.revivePlayer();
-    this.sprite = new Sprite(types.entity.player, 96, 118, 80, 100);
+    this.sprite = new Sprite(types.entity.player, 96, 118, 96, 118);
     this.sprite.frameVector = [1,2,0,3];
     this.sprite.cycleTime = 170; // ms
     this.sprite.maxCycle = 4;
@@ -279,7 +279,7 @@ class Bomb extends Entity {
   constructor(id, x, y) {
     super();
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.bomb, 64, 64, 72, 72);
+    this.sprite = new Sprite(types.entity.bomb, 64, 64, 88, 88);
     this.sprite.cycleTime = 150;
     this.sprite.maxCycle = 3;
     this.state = new BombState(id, x, y, 0);
@@ -299,7 +299,7 @@ class Wave extends Entity {
   constructor(id, rowId, colId, dir) {
     super();
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.wave, 64, 64, 50, 50);
+    this.sprite = new Sprite(types.entity.wave, 64, 64, 64, 64);
     this.sprite.startY = ((dir + 1) % 4) * this.sprite.sizeY;
     this.sprite.cycleTime = 250;
     this.sprite.maxCycle = 2;
@@ -370,6 +370,12 @@ function handleMessage(data) {
       localPlayerId = msg.id;
     break;
     case types.opcode.player:
+      for (id in players) {
+        if (!(id in msg.players)) {
+          delete players[id];
+        }
+      }
+
       for (id in msg.players) {
         var remotePlayer = msg.players[id];
         if (!(id in players)) { // 创建玩家
