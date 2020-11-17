@@ -302,7 +302,7 @@ class PlayerState extends EntityState {
     this.rowId = toRowId;
     this.colId = toColId;
 
-    for (id in playerMatrix[this.rowId][this.colId]) {
+    for (var id in playerMatrix[this.rowId][this.colId]) {
       if (id == this.id) {
         continue;
       }
@@ -455,7 +455,7 @@ class BombState extends EntityState {
   chainBomb(currentBomb) {
     bombsVisited[currentBomb.id] = 1;
     currentBomb.doBomb();
-    for (i in currentBomb.chain) {
+    for (var i in currentBomb.chain) {
       if (bombsVisited[currentBomb.chain[i]]) {
         continue;
       }
@@ -525,7 +525,7 @@ class WaveState extends EntityState {
 
     var playerIds = Object.keys(playerMatrix[this.rowId][this.colId]);
     if (playerIds.length) {
-      for (i in playerIds) {
+      for (var i in playerIds) {
         players[playerIds[i]].downPlayer();
       }
     }
@@ -573,8 +573,22 @@ function sendMessage(msg) {
   }
 }
 
+var moveMessageTimes = {};
 function recvMessage(id, msg) {
   if (!msgQueue.full()) {
+    if (msg.opcode == types.opcode.move) {
+      var nowTs = +new Date();
+      if (!(id in moveMessageTimes)) {
+        moveMessageTimes[id] = nowTs;
+      } else {
+        var delta = nowTs - moveMessageTimes[id];
+        if (delta < 10) {
+          return;
+        } else {
+          moveMessageTimes[id] = nowTs;
+        }
+      }
+    }
     msgQueue.push({id: id, msg: msg});
   }
 }
@@ -635,7 +649,7 @@ function clearMatrix(obj) {
   matrix = new Array(MAX_ROW);
   for (var i = 0; i < MAX_ROW; i++) {
     matrix[i] = new Array(MAX_COL);
-    for (j = 0; j < MAX_COL; j++) {
+    for (var j = 0; j < MAX_COL; j++) {
       if (typeof obj != 'undefined') {
         matrix[i][j] = obj;
       } else {
@@ -654,10 +668,10 @@ function init() {
   waveMatrix = clearMatrix();
   playerMatrix = clearMatrix({});
 
-  for (i in loots) {
+  for (var i in loots) {
     delete loots[i];
   }
-  for (i in boxes) {
+  for (var i in boxes) {
     delete boxes[i];
   }
 
@@ -695,7 +709,7 @@ function handleClientMessage(data) {
 }
 
 function broadcastState() {
-  for (id in players) {
+  for (var id in players) {
     sendMessage({to: id, data: { opcode: types.opcode.player, players: players,}});
     sendMessage({to: id, data: { opcode: types.opcode.bomb, bombs: matrixToIntArray(bombMatrix),}});
     sendMessage({to: id, data: { opcode: types.opcode.wave, waves: waves,}});
@@ -707,18 +721,18 @@ function broadcastState() {
 function restartGame() {
   init();
   numPlayers = 0;
-  for (spawn in playerSpawns) {
+  for (var spawn in playerSpawns) {
     playerSpawns[spawn].spawn = true;
   }
   spawnedPlayers = {};
-  for (i in players) {
+  for (var i in players) {
     doSpawn(i);
   }
 }
 
 function serverUpdate(delta) {
   var shouldRestart = false;
-  for (id in players) {
+  for (var id in players) {
     var player = players[id];
     shouldRestart |= player.score >= 3;
   }
@@ -740,7 +754,7 @@ function update(delta, serverUpdateCallback, callback, broadcast) {
       playerMatrix[i][j] = {};
     }
   }
-  for (id in players) {
+  for (var id in players) {
     var player = players[id];
     var rowId = typeof player.state == 'undefined' ? player.rowId : player.state.rowId;
     var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
@@ -748,12 +762,12 @@ function update(delta, serverUpdateCallback, callback, broadcast) {
   }
 
   // 更新玩家
-  for (i in players) { players[i].update(delta); }
+  for (var i in players) { players[i].update(delta); }
   // 更新其他
-  for (i in waves) { waves[i].update(delta); }
-  for (i in bombs) { bombs[i].update(delta); }
+  for (var i in waves) { waves[i].update(delta); }
+  for (var i in bombs) { bombs[i].update(delta); }
 
-  for (id in toDestroyBoxes) {
+  for (var id in toDestroyBoxes) {
     var rand = getRandomInt(100);
     if (rand <= 30) { // 30%掉强化
       var lootId = getID();
@@ -829,6 +843,7 @@ function disconnectPlayer(id) {
     numPlayers--;
     playerSpawns[spawnedPlayers[id]].spawn = true;
     delete spawnedPlayers[id];
+    delete moveMessageTimes[id];
   }
 }
 

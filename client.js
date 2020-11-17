@@ -375,13 +375,13 @@ function handleMessage(data) {
       localPlayerId = msg.id;
     break;
     case types.opcode.player:
-      for (id in players) {
+      for (var id in players) {
         if (!(id in msg.players)) {
           delete players[id];
         }
       }
 
-      for (id in msg.players) {
+      for (var id in msg.players) {
         var remotePlayer = msg.players[id];
         if (!(id in players)) { // 创建玩家
           players[id] = new Player(
@@ -440,12 +440,12 @@ function handleMessage(data) {
       }
     break;
     case types.opcode.wave:
-      for (id in waves) {
+      for (var id in waves) {
         if (!(id in msg.waves)) {
           clientRemove(waves, id, waveMatrix);
         }
       }
-      for (id in msg.waves) {
+      for (var id in msg.waves) {
         if (!(id in waves)) {
           var wave = 
             new Wave(id, msg.waves[id].rowId, msg.waves[id].colId, msg.waves[id].dir);
@@ -457,12 +457,12 @@ function handleMessage(data) {
       boxMatrix = intArrayToMatrix(msg.boxes);
     break;
     case types.opcode.loot:
-      for (id in loots) {
+      for (var id in loots) {
         if (!(id in msg.loots)) {
           delete loots[id];
         }
       }
-      for (id in msg.loots) {
+      for (var id in msg.loots) {
         if (!(id in loots)) {
           var loot = new Loot(id, msg.loots[id].x, msg.loots[id].y, msg.loots[id].type);
           loots[id] = loot;
@@ -524,8 +524,8 @@ function render(delta) {
     }
   }
 
-  for (i in loots) { loots[i].render(delta); }
-  for (i in waves) { waves[i].render(delta); }
+  for (var i in loots) { loots[i].render(delta); }
+  for (var i in waves) { waves[i].render(delta); }
 
   for (var i = 0; i < MAX_ROW; i++) {
     var playersToRender = [];
@@ -536,18 +536,18 @@ function render(delta) {
       if (boxMatrix[i][j]) {
         box.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
       }
-      for (playerId in playerMatrix[i][j]) {
+      for (var playerId in playerMatrix[i][j]) {
         playersToRender.push(playerId);
       }
     }
 
-    for (playerId in playersToRender) {
+    for (var playerId in playersToRender) {
       players[playersToRender[playerId]].render(delta);
     }
   }
 
   var scoreText = '';
-  for (i in players) {
+  for (var i in players) {
     scoreText += players[i].state.score.toString() + ' ';
   }
   score.innerHTML = scoreText;
