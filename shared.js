@@ -202,7 +202,9 @@ class EntityState {
 class BoxState extends EntityState {
   constructor(id, x, y) {
     super(id, x, y);
-    boxMatrix[this.rowId][this.colId] = this.id;
+    if (x != -1) {
+      boxMatrix[this.rowId][this.colId] = this.id;
+    }
   }
 
   destroyBox() {
@@ -398,7 +400,9 @@ class BombState extends EntityState {
     this.putTime = +new Date();
     this.ttl = 3000; // 3秒
     this.owner = owner;
-    bombMatrix[this.rowId][this.colId] = id;
+    if (x != -1) {
+      bombMatrix[this.rowId][this.colId] = id;
+    }
   }
 
   blocked(rowId, colId) {
@@ -596,6 +600,37 @@ function releaseID(id) {
   idQueue.push(id);
 }
 
+function matrixToIntArray(matrix) {
+  var array = []
+
+  for (var i = 0; i < MAX_ROW; i++) {
+    var rowMask = 0;
+    for (var j = 0; j < MAX_COL; j++) {
+      if (matrix[i][j]) {
+        rowMask |= 1 << j;
+      }
+    }
+    array.push(rowMask);
+  }
+
+  return array;
+}
+
+function intArrayToMatrix(array) {
+  var matrix = {};
+
+  for (var i = 0; i < MAX_ROW; i++) {
+    matrix[i] = {};
+    for (var j = 0; j < MAX_COL; j++) {
+      if (array[i] & 1 << j) {
+        matrix[i][j] = 1;
+      }
+    }
+  }
+
+  return matrix;
+}
+
 function clearMatrix(obj) {
   matrix = new Array(MAX_ROW);
   for (i = 0; i < MAX_ROW; i++) {
@@ -662,9 +697,9 @@ function handleClientMessage(data) {
 function broadcastState() {
   for (id in players) {
     sendMessage({to: id, data: { opcode: types.opcode.player, players: players,}});
-    sendMessage({to: id, data: { opcode: types.opcode.bomb, bombs: bombs,}});
+    sendMessage({to: id, data: { opcode: types.opcode.bomb, bombs: matrixToIntArray(bombMatrix),}});
     sendMessage({to: id, data: { opcode: types.opcode.wave, waves: waves,}});
-    sendMessage({to: id, data: { opcode: types.opcode.box, boxes: boxes,}});
+    sendMessage({to: id, data: { opcode: types.opcode.box, boxes: matrixToIntArray(boxMatrix),}});
     sendMessage({to: id, data: { opcode: types.opcode.loot, loots: loots,}});
   }
 }

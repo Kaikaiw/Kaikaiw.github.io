@@ -133,6 +133,10 @@ class Entity {
     this.sprite.render(delta, this.state.x, this.state.y);
   }
 
+  renderAt(delta, x, y)  {
+    this.sprite.render(delta, x, y);
+  }
+
   update(delta) {
     this.sprite.update(delta);
     this.state.update(delta);
@@ -255,6 +259,7 @@ class Player extends Entity {
       sendMessage({
         'opcode': types.opcode.put_bomb,
       });
+      Resource.playSnd(types.sound.put_bomb);
     }
 
     if (Object.keys(input).length != 0 && !shouldProcessSpace) {
@@ -419,20 +424,19 @@ function handleMessage(data) {
       }
     break;
     case types.opcode.bomb:
-      for (id in bombs) {
-        if (!(id in msg.bombs)) {
-          clientRemove(bombs, id, bombMatrix);
-          Resource.playSnd(types.sound.explode);
+      var newBombMatrix = intArrayToMatrix(msg.bombs);
+      var bombed = false;
+      for (var i = 0; i < MAX_ROW; i++) {
+        for (var j = 0; j < MAX_COL; j++) {
+          if (bombMatrix[i][j] && !newBombMatrix[i][j]) {
+            bombed = true;
+          }
+          bombMatrix[i][j] = newBombMatrix[i][j];
         }
       }
-      for (id in msg.bombs) {
-        if (!(id in bombs)) {
-          var bomb = new Bomb(id, msg.bombs[id].x, msg.bombs[id].y);
-          bombs[id] = bomb;
-          if (msg.bombs[id].owner == localPlayerId) {
-            Resource.playSnd(types.sound.put_bomb);
-          }
-        }
+
+      if (bombed) {
+        Resource.playSnd(types.sound.explode);
       }
     break;
     case types.opcode.wave:
@@ -450,17 +454,7 @@ function handleMessage(data) {
       }
     break;
     case types.opcode.box:
-      for (id in boxes) {
-        if (!(id in msg.boxes)) {
-          clientRemove(boxes, id, boxMatrix);
-        }
-      }
-      for (id in msg.boxes) {
-        if (!(id in boxes)) {
-          var box = new Box(id, msg.boxes[id].x, msg.boxes[id].y);
-          boxes[id] = box;
-        }
-      }
+      boxMatrix = intArrayToMatrix(msg.boxes);
     break;
     case types.opcode.loot:
       for (id in loots) {
@@ -486,6 +480,9 @@ function clientProcessSend() {
     server.emit('opcode', sendQueue.shift());
   }
 }
+
+var box = new Box(0, -1, -1);
+var bomb = new Bomb(0, -1, -1);
 
 function initGame() {
   var canvas = document.getElementById('canvas');
@@ -515,6 +512,7 @@ function initGame() {
   setInterval(function () {
     render(1000.0 / 60);
     tick(1000.0 / 60, () => {}, handleMessage, () => {});
+    bomb.update(1000.0 / 60);
     clientProcessSend();
   }, 1000.0 / 60); // 60FPS 游戏循环
 }
@@ -533,10 +531,10 @@ function render(delta) {
     var playersToRender = [];
     for (j = 0; j < MAX_COL; j++) {
       if (bombMatrix[i][j]) {
-        bombs[bombMatrix[i][j]].render(delta);
+        bomb.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
       }
       if (boxMatrix[i][j]) {
-        boxes[boxMatrix[i][j]].render(delta);
+        box.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
       }
       for (playerId in playerMatrix[i][j]) {
         playersToRender.push(playerId);
