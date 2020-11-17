@@ -731,19 +731,8 @@ function serverUpdate(delta) {
 
 function update(delta, serverUpdateCallback, callback, broadcast) {
   // 接收网络消息
-  var moveCtr = {};
   while (!msgQueue.empty()) {
-    var msg = msgQueue.shift();
-    if (msg.msg.opcode == types.opcode.move) {
-      if (!(msg.id in moveCtr)) {
-        moveCtr[msg.id] = 0;
-      }
-      moveCtr[msg.id]++;
-      if (moveCtr[msg.id] > 60.0 / SERVER_FRAME) {
-        continue;
-      }
-    }
-    callback(msg); // handleClientMessage
+    callback(msgQueue.shift()); // handleClientMessage
   }
 
   serverUpdateCallback(delta);
