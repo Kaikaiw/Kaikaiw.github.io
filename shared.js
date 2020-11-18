@@ -713,7 +713,29 @@ function restartGame() {
   }
 }
 
-function serverUpdate(delta) {
+var frameCtr = -1;
+var counterMap = {};
+
+function serverUpdate(delta, callback) {
+  while (!msgQueue.empty()) {
+    var msg = msgQueue.shift();
+    var opcode = msg.msg.opcode;
+    if (msg.msg.opcode == types.opcode.move) {
+      var id = msg.id;
+      counterMap[id]++;
+    }
+    callback(msg); // handleClientMessage
+  }
+
+  frameCtr++;
+  if (frameCtr + 1 & 8) {
+    frameCtr = -1;
+    console.log(counterMap);
+    for (var id in counterMap) {
+      counterMap[id] = 0;
+    }
+  } 
+
   var shouldRestart = false;
   for (var id in players) {
     var player = players[id];
@@ -723,29 +745,7 @@ function serverUpdate(delta) {
   if (shouldRestart) {
     restartGame();
   }
-}
 
-function update(delta, serverUpdateCallback, callback, broadcast) {
-  // 接收网络消息
-  while (!msgQueue.empty()) {
-    callback(msgQueue.shift()); // handleClientMessage
-  }
-
-  serverUpdateCallback(delta);
-  for (var i = 0; i < MAX_ROW; i++) {
-    for (var j = 0; j < MAX_COL; j++) {
-      playerMatrix[i][j] = {};
-    }
-  }
-  for (var id in players) {
-    var player = players[id];
-    var rowId = typeof player.state == 'undefined' ? player.rowId : player.state.rowId;
-    var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
-    playerMatrix[rowId][colId][id] = 1;
-  }
-
-  // 更新玩家
-  for (var i in players) { players[i].update(delta); }
   // 更新其他
   for (var i in waves) { waves[i].update(delta); }
   for (var i in bombs) { bombs[i].update(delta); }
@@ -766,7 +766,32 @@ function update(delta, serverUpdateCallback, callback, broadcast) {
   }
   toDestroyBoxes = {};
 
-  broadcast();
+  broadcastState();
+  return true;
+}
+
+function update(delta, serverUpdateCallback, callback) {
+  // 接收网络消息
+  if (!serverUpdateCallback(delta, callback)) {
+    while (!msgQueue.empty()) {
+      callback(msgQueue.shift()); // handleMessage
+    }
+  }
+
+  for (var i = 0; i < MAX_ROW; i++) {
+    for (var j = 0; j < MAX_COL; j++) {
+      playerMatrix[i][j] = {};
+    }
+  }
+  for (var id in players) {
+    var player = players[id];
+    var rowId = typeof player.state == 'undefined' ? player.rowId : player.state.rowId;
+    var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
+    playerMatrix[rowId][colId][id] = 1;
+  }
+
+  // 更新玩家
+  for (var i in players) { players[i].update(delta); }
 }
 
 function processSend() {
@@ -778,8 +803,8 @@ function processSend() {
   }
 }
 
-function tick(delta, serverUpdateCallback, callback, broadcast) {
-  update(delta, serverUpdateCallback, callback, broadcast);
+function tick(delta, serverUpdateCallback, callback) {
+  update(delta, serverUpdateCallback, callback);
 }
 
 playerSpawns = [
@@ -801,19 +826,18 @@ function doSpawn(id) {
     players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
     spawnedPlayers[id] = i;
     spawn.spawn = false;
+    counterMap[id] = 0;
     numPlayers++;
-    return true;
+    break;
   }
 
-  return false;
+  sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
 }
 
 function spawnPlayer(id, socket) {
   if (!(id in clients) && numPlayers < MAX_PLAYERS) {
     clients[id] = socket;
-    if (doSpawn(id)) {
-      sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
-    }
+    doSpawn(id);
   } else {
     socket.disconnect();
   }
@@ -826,6 +850,7 @@ function disconnectPlayer(id) {
     numPlayers--;
     playerSpawns[spawnedPlayers[id]].spawn = true;
     delete spawnedPlayers[id];
+    delete counterMap[id];
   }
 }
 
@@ -848,7 +873,6 @@ E.sendMessage = sendMessage;
 E.recvMessage = recvMessage;
 E.processSend = processSend;
 E.handleClientMessage = handleClientMessage;
-E.broadcastState = broadcastState;
 E.serverUpdate = serverUpdate;
 E.SERVER_FRAME = SERVER_FRAME;
 E.prepID = prepID;

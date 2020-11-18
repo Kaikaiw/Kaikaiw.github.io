@@ -508,7 +508,7 @@ function initGame() {
   oldTs = +new Date();
   setInterval(function () {
     render(1000.0 / 60);
-    tick(1000.0 / 60, () => {}, handleMessage, () => {});
+    tick(1000.0 / 60, () => { return false; }, handleMessage);
     bomb.update(1000.0 / 60);
     clientProcessSend();
   }, 1000.0 / 60); // 60FPS 游戏循环
