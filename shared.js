@@ -728,10 +728,11 @@ function serverUpdate(delta, callback) {
   }
 
   frameCtr++;
-  if (frameCtr + 1 & 8) {
+  if (frameCtr + 1 & 16) {
     frameCtr = -1;
     for (var id in counterMap) {
-      if (counterMap[id] >= 60) {
+      console.log(counterMap[id]);
+      if (counterMap[id] >= 120) {
         disconnectPlayer(id);
       } else {
         counterMap[id] = 0;
