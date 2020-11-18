@@ -12,8 +12,16 @@ function initGame() {
   }, 1000.0 / E.SERVER_FRAME);
 }
 
+function kickPlayer(id) {
+  delete tsMap[id];
+  delete ctrMap[id];
+  delete secondCheckMap[id];
+  E.disconnectPlayer(id);
+}
+
 var tsMap = {};
 var ctrMap = {};
+var secondCheckMap = {};
 function calcAvgCtr(id) {
   var nowTs = +new Date();
   if (!(id in tsMap)) {
@@ -29,7 +37,18 @@ function calcAvgCtr(id) {
     }
     ctrMap[id]++;
   } else {
-    console.log(id, previousSecond, ctrMap[id]);
+    // anti - cheat
+    if (ctrMap[id] >= 120) {       // 2x
+      kickPlayer(id);
+    } else if (ctrMap[id] >= 90) { // 1.5x
+      if (!(id in secondCheckMap)) {
+        secondCheckMap[id] = 0;
+      }
+      secondCheckMap[id]++;
+      if (secondCheckMap[id] == 3) {
+        kickPlayer(id);
+      }
+    }
     ctrMap[id] = 1;
   }
 
@@ -50,7 +69,9 @@ function init() {
       E.recvMessage(id, msg);
     });
     socket.on('disconnect', (reason) => {
-      E.disconnectPlayer(id);
+      delete tsMap[id];
+      delete ctrMap[id];
+      kickPlayer(id);
     })
   });
 }
