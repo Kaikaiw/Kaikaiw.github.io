@@ -366,10 +366,6 @@ class PlayerState extends EntityState {
     var key = input.key;
     var delta = input.delta;
 
-    if (delta > 20 || delta <= 0) { // Anti-cheat
-      return;
-    }
-
     switch (key) {
     case types.key.up:
       this.move(delta, types.dir.up);

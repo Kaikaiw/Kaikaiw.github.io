@@ -69,8 +69,6 @@ function init() {
       E.recvMessage(id, msg);
     });
     socket.on('disconnect', (reason) => {
-      delete tsMap[id];
-      delete ctrMap[id];
       kickPlayer(id);
     })
   });
