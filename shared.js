@@ -747,8 +747,8 @@ function serverUpdate(delta, callback) {
       counterMap[id] = 0;
     }
 
-    for (var id in clients) {
-      if (!(id in counterMap)) {
+    for (var id in counterMap) {
+      if (!(id in clients)) {
         delete counterMap[id];
         delete contMap[id];
       }
