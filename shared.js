@@ -715,6 +715,7 @@ function restartGame() {
 
 var frameCtr = -1;
 var counterMap = {};
+var contMap = {};
 
 function serverUpdate(delta, callback) {
   while (!msgQueue.empty()) {
@@ -731,12 +732,15 @@ function serverUpdate(delta, callback) {
   if (frameCtr + 1 & 16) {
     frameCtr = -1;
     for (var id in counterMap) {
-      console.log(counterMap[id]);
-      if (counterMap[id] >= 120) {
-        disconnectPlayer(id);
+      if (counterMap[id] >= 115) {
+        contMap[id]++;
+        if (contMap[id] == 3) {
+          disconnectPlayer(id);
+        }
       } else {
-        counterMap[id] = 0;
+        contMap[id] = 0;
       }
+      counterMap[id] = 0;
     }
   } 
 
@@ -831,6 +835,7 @@ function doSpawn(id) {
     spawnedPlayers[id] = i;
     spawn.spawn = false;
     counterMap[id] = 0;
+    contMap[id] = 0;
     numPlayers++;
     break;
   }
@@ -855,6 +860,7 @@ function disconnectPlayer(id) {
     playerSpawns[spawnedPlayers[id]].spawn = true;
     delete spawnedPlayers[id];
     delete counterMap[id];
+    delete contMap[id];
   }
 }
 
