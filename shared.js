@@ -766,7 +766,6 @@ function serverUpdate(delta, callback) {
   }
 
   // 更新其他
-  for (var i in waves) { waves[i].update(delta); }
   for (var i in bombs) { bombs[i].update(delta); }
 
   for (var id in toDestroyBoxes) {
@@ -804,6 +803,7 @@ function update(delta, serverUpdateCallback, callback) {
     var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
     playerMatrix[rowId][colId][id] = 1;
   }
+  for (var i in waves) { waves[i].update(delta); }
 
   if (server) {
     return;
