@@ -713,11 +713,9 @@ function restartGame() {
   }
 }
 
-var frameCtr = -1;
-var counterMap = {};
-var contMap = {};
-
 function serverUpdate(delta, callback) {
+  var ctrMap = {};
+
   while (!msgQueue.empty()) {
     var msg = msgQueue.shift();
     if (!(msg.id in clients)) {
@@ -726,35 +724,16 @@ function serverUpdate(delta, callback) {
 
     var opcode = msg.msg.opcode;
     if (msg.msg.opcode == types.opcode.move) {
-      counterMap[msg.id]++;
+      if (!(msg.id in ctrMap)) {
+        ctrMap[msg.id] = 0;
+      }
+      ctrMap[msg.id]++;
+      if (ctrMap[msg.id] > 6) {
+        continue;
+      }
     }
     callback(msg); // handleClientMessage
   }
-
-  frameCtr++;
-  if (frameCtr + 1 & 8) {
-    frameCtr = -1;
-    console.log(counterMap);
-    for (var id in counterMap) {
-      if (counterMap[id] >= 55) {
-        contMap[id]++;
-        if (contMap[id] == 3) {
-          clients[id].disconnect();
-        }
-      } else {
-        contMap[id] = 0;
-      }
-      counterMap[id] = 0;
-    }
-
-    for (var id in counterMap) {
-      if (!(id in clients)) {
-        delete counterMap[id];
-        delete contMap[id];
-      }
-    }
-  } 
-
 
   var shouldRestart = false;
   for (var id in players) {
@@ -846,8 +825,6 @@ function doSpawn(id) {
     players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
     spawnedPlayers[id] = i;
     spawn.spawn = false;
-    counterMap[id] = 0;
-    contMap[id] = 0;
     numPlayers++;
     break;
   }
