@@ -720,10 +720,13 @@ var contMap = {};
 function serverUpdate(delta, callback) {
   while (!msgQueue.empty()) {
     var msg = msgQueue.shift();
+    if (!(msg.id in clients)) {
+      continue;
+    }
+
     var opcode = msg.msg.opcode;
     if (msg.msg.opcode == types.opcode.move) {
-      var id = msg.id;
-      counterMap[id]++;
+      counterMap[msg.id]++;
     }
     callback(msg); // handleClientMessage
   }
@@ -736,7 +739,7 @@ function serverUpdate(delta, callback) {
       if (counterMap[id] >= 110) {
         contMap[id]++;
         if (contMap[id] == 3) {
-          disconnectPlayer(id);
+          clients[id].disconnect();
         }
       } else {
         contMap[id] = 0;
@@ -855,7 +858,6 @@ function spawnPlayer(id, socket) {
 
 function disconnectPlayer(id) {
   if (id in clients) {
-    clients[id].disconnect();
     delete clients[id];
     delete players[id];
     numPlayers--;
