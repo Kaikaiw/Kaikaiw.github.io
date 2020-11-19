@@ -713,6 +713,7 @@ function restartGame() {
   }
 }
 
+var frameCtr = 0;
 var movingPPS = {};
 
 function serverUpdate(delta, callback) {
@@ -741,11 +742,19 @@ function serverUpdate(delta, callback) {
       movingPPS[id].sum -= movingPPS[id].queue.shift();
     }
     movingPPS[id].queue.push(val);
+  }
 
-    if (movingPPS[id].sum >= 66) { // 1.1x
-      movingPPS[id].ctr++;
-      if (movingPPS[id].ctr == 3) {
-        clients[id].disconnect(id);
+  frameCtr++;
+  if (frameCtr == 10) {
+    frameCtr = 0;
+    for (var id in clients) {
+      if (movingPPS[id].sum >= 66) { // 1.1x
+        movingPPS[id].ctr++;
+        if (movingPPS[id].ctr == 3) {
+          clients[id].disconnect();
+        }
+      } else {
+        movingPPS[id].ctr = 0;
       }
     }
   }
