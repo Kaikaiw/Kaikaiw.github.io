@@ -713,6 +713,9 @@ function restartGame() {
   }
 }
 
+var movingPPS = {};
+var frameCtr = -1;
+
 function serverUpdate(delta, callback) {
   var ctrMap = {};
 
@@ -728,11 +731,22 @@ function serverUpdate(delta, callback) {
         ctrMap[msg.id] = 0;
       }
       ctrMap[msg.id]++;
-      if (ctrMap[msg.id] > 6) {
-        continue;
-      }
     }
     callback(msg); // handleClientMessage
+  }
+
+  for (var id in ctrMap) {
+    movingPPS[id].sum += ctrMap[id];
+    if (movingPPS[id].queue.full()) {
+      movingPPS[id].sum -= movingPPS[id].queue.shift();
+    }
+    movingPPS[id].queue.push(ctrMap[id]);
+  }
+
+  frameCtr++;
+  if (frameCtr == 9) {
+    frameCtr = -1;
+    console.log(movingPPS);
   }
 
   var shouldRestart = false;
@@ -825,6 +839,10 @@ function doSpawn(id) {
     players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
     spawnedPlayers[id] = i;
     spawn.spawn = false;
+    movingPPS[id] = {
+      sum: 0,
+      queue: new Queue(11),
+    }
     numPlayers++;
     break;
   }
@@ -848,6 +866,7 @@ function disconnectPlayer(id) {
     numPlayers--;
     playerSpawns[spawnedPlayers[id]].spawn = true;
     delete spawnedPlayers[id];
+    delete movingPPS[id];
   }
 }
 
