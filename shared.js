@@ -732,11 +732,11 @@ function serverUpdate(delta, callback) {
   }
 
   frameCtr++;
-  if (frameCtr + 1 & 16) {
+  if (frameCtr + 1 & 8) {
     frameCtr = -1;
     console.log(counterMap);
     for (var id in counterMap) {
-      if (counterMap[id] >= 110) {
+      if (counterMap[id] >= 55) {
         contMap[id]++;
         if (contMap[id] == 3) {
           clients[id].disconnect();
@@ -746,7 +746,15 @@ function serverUpdate(delta, callback) {
       }
       counterMap[id] = 0;
     }
+
+    for (var id in clients) {
+      if (!(id in counterMap)) {
+        delete counterMap[id];
+        delete contMap[id];
+      }
+    }
   } 
+
 
   var shouldRestart = false;
   for (var id in players) {
@@ -863,8 +871,6 @@ function disconnectPlayer(id) {
     numPlayers--;
     playerSpawns[spawnedPlayers[id]].spawn = true;
     delete spawnedPlayers[id];
-    delete counterMap[id];
-    delete contMap[id];
   }
 }
 
