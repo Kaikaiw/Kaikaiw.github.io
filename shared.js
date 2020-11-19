@@ -855,6 +855,7 @@ function spawnPlayer(id, socket) {
 
 function disconnectPlayer(id) {
   if (id in clients) {
+    socket.disconnect();
     delete clients[id];
     delete players[id];
     numPlayers--;
