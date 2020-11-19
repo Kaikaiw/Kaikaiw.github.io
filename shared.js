@@ -714,7 +714,6 @@ function restartGame() {
 }
 
 var movingPPS = {};
-var frameCtr = -1;
 
 function serverUpdate(delta, callback) {
   var ctrMap = {};
@@ -742,12 +741,13 @@ function serverUpdate(delta, callback) {
       movingPPS[id].sum -= movingPPS[id].queue.shift();
     }
     movingPPS[id].queue.push(val);
-  }
 
-  frameCtr++;
-  if (frameCtr == 9) {
-    frameCtr = -1;
-    console.log(movingPPS);
+    if (movingPPS[id].sum >= 66) { // 1.1x
+      movingPPS[id].ctr++;
+      if (movingPPS[id].ctr == 3) {
+        clients[id].disconnect(id);
+      }
+    }
   }
 
   var shouldRestart = false;
@@ -841,6 +841,7 @@ function doSpawn(id) {
     spawnedPlayers[id] = i;
     spawn.spawn = false;
     movingPPS[id] = {
+      ctr: 0,
       sum: 0,
       queue: new Queue(11),
     }
