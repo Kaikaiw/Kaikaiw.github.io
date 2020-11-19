@@ -735,12 +735,13 @@ function serverUpdate(delta, callback) {
     callback(msg); // handleClientMessage
   }
 
-  for (var id in ctrMap) {
-    movingPPS[id].sum += ctrMap[id];
+  for (var id in clients) {
+    var val = id in ctrMap ? ctrMap[id] : 0;
+    movingPPS[id].sum += val;
     if (movingPPS[id].queue.full()) {
       movingPPS[id].sum -= movingPPS[id].queue.shift();
     }
-    movingPPS[id].queue.push(ctrMap[id]);
+    movingPPS[id].queue.push(val);
   }
 
   frameCtr++;
