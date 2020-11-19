@@ -731,6 +731,7 @@ function serverUpdate(delta, callback) {
   frameCtr++;
   if (frameCtr + 1 & 16) {
     frameCtr = -1;
+    console.log(counterMap);
     for (var id in counterMap) {
       if (counterMap[id] >= 110) {
         contMap[id]++;
