@@ -714,24 +714,23 @@ function restartGame() {
 }
 
 var frameCtr = 0;
-var movingPPS = {};
 
 function serverUpdate(delta, callback) {
   while (!msgQueue.empty()) {
     var msg = msgQueue.shift();
-    if (!(msg.id in clients)) {
+    if (!(msg.id in players)) {
       continue;
     }
 
     var opcode = msg.msg.opcode;
     if (msg.msg.opcode == types.opcode.move) {
-      movingPPS[msg.id].val++;
+      players[msg.id].movingPPS.val++;
     }
     callback(msg); // handleClientMessage
   }
 
-  for (var id in movingPPS) {
-    var pps = movingPPS[id];
+  for (var id in players) {
+    var pps = players[id].movingPPS;
     pps.sum += pps.val;
     if (pps.queue.full()) {
       pps.sum -= pps.queue.shift();
@@ -743,8 +742,8 @@ function serverUpdate(delta, callback) {
   frameCtr++;
   if (frameCtr == 10) {
     frameCtr = 0;
-    for (var id in movingPPS) {
-      var pps = movingPPS[id];
+    for (var id in players) {
+      var pps = players[id].movingPPS;
       if (pps.sum >= 66) { // 1.1x
         pps.ctr++;
         if (pps.ctr == 3) {
@@ -792,11 +791,7 @@ function serverUpdate(delta, callback) {
 
 function update(delta, serverUpdateCallback, callback) {
   // 接收网络消息
-  if (!serverUpdateCallback(delta, callback)) {
-    while (!msgQueue.empty()) {
-      callback(msgQueue.shift()); // handleMessage
-    }
-  }
+  var server = serverUpdateCallback(delta, callback);
 
   for (var i = 0; i < MAX_ROW; i++) {
     for (var j = 0; j < MAX_COL; j++) {
@@ -808,6 +803,14 @@ function update(delta, serverUpdateCallback, callback) {
     var rowId = typeof player.state == 'undefined' ? player.rowId : player.state.rowId;
     var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
     playerMatrix[rowId][colId][id] = 1;
+  }
+
+  if (server) {
+    return;
+  }
+
+  while (!msgQueue.empty()) {
+    callback(msgQueue.shift()); // handleMessage
   }
 
   // 更新玩家
@@ -844,14 +847,14 @@ function doSpawn(id) {
     var spawnX = spawn.where[0];
     var spawnY = spawn.where[1];
     players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
-    spawnedPlayers[id] = i;
-    spawn.spawn = false;
-    movingPPS[id] = {
+    players[id].movingPPS = {
       val: 0,
       sum: 0,
       ctr: 0,
       queue: new Queue(11),
     }
+    spawnedPlayers[id] = i;
+    spawn.spawn = false;
     numPlayers++;
     break;
   }
@@ -875,7 +878,6 @@ function disconnectPlayer(id) {
     numPlayers--;
     playerSpawns[spawnedPlayers[id]].spawn = true;
     delete spawnedPlayers[id];
-    delete movingPPS[id];
   }
 }
 
