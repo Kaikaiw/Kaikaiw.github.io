@@ -732,7 +732,7 @@ function serverUpdate(delta, callback) {
   if (frameCtr + 1 & 16) {
     frameCtr = -1;
     for (var id in counterMap) {
-      if (counterMap[id] >= 115) {
+      if (counterMap[id] >= 110) {
         contMap[id]++;
         if (contMap[id] == 3) {
           disconnectPlayer(id);
