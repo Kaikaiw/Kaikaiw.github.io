@@ -717,8 +717,6 @@ var frameCtr = 0;
 var movingPPS = {};
 
 function serverUpdate(delta, callback) {
-  var ctrMap = {};
-
   while (!msgQueue.empty()) {
     var msg = msgQueue.shift();
     if (!(msg.id in clients)) {
@@ -727,34 +725,33 @@ function serverUpdate(delta, callback) {
 
     var opcode = msg.msg.opcode;
     if (msg.msg.opcode == types.opcode.move) {
-      if (!(msg.id in ctrMap)) {
-        ctrMap[msg.id] = 0;
-      }
-      ctrMap[msg.id]++;
+      movingPPS[msg.id].val++;
     }
     callback(msg); // handleClientMessage
   }
 
-  for (var id in clients) {
-    var val = id in ctrMap ? ctrMap[id] : 0;
-    movingPPS[id].sum += val;
-    if (movingPPS[id].queue.full()) {
-      movingPPS[id].sum -= movingPPS[id].queue.shift();
+  for (var id in movingPPS) {
+    var pps = movingPPS[id];
+    pps.sum += pps.val;
+    if (pps.queue.full()) {
+      pps.sum -= pps.queue.shift();
     }
-    movingPPS[id].queue.push(val);
+    pps.queue.push(pps.val);
+    pps.val = 0;
   }
 
   frameCtr++;
   if (frameCtr == 10) {
     frameCtr = 0;
-    for (var id in clients) {
-      if (movingPPS[id].sum >= 66) { // 1.1x
-        movingPPS[id].ctr++;
-        if (movingPPS[id].ctr == 3) {
+    for (var id in movingPPS) {
+      var pps = movingPPS[id];
+      if (pps.sum >= 66) { // 1.1x
+        pps.ctr++;
+        if (pps.ctr == 3) {
           clients[id].disconnect();
         }
       } else {
-        movingPPS[id].ctr = 0;
+        pps.ctr = 0;
       }
     }
   }
@@ -850,8 +847,9 @@ function doSpawn(id) {
     spawnedPlayers[id] = i;
     spawn.spawn = false;
     movingPPS[id] = {
-      ctr: 0,
+      val: 0,
       sum: 0,
+      ctr: 0,
       queue: new Queue(11),
     }
     numPlayers++;
