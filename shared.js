@@ -68,8 +68,8 @@ types = {
 // =============================================================================
 SERVER_FRAME = 10;
 INFINITE = Number.MAX_VALUE;
-MAX_ID = 131072;
-MAX_QUEUE_SIZE = 1024;
+MAX_ID = 131071;
+MAX_QUEUE_SIZE = 1023;
 MAX_ROW = 13;
 MAX_COL = 15;
 UNIT_WIDTH = 64;
@@ -126,7 +126,7 @@ function clientRemove(dict, id, matrix) {
 // =============================================================================
 class Queue {
   constructor(size) {
-    this.size = size;
+    this.size = size + 1;
     this.data = [this.size];
     this.queueL = 0;
     this.queueR = 0;
@@ -135,14 +135,21 @@ class Queue {
   empty() {
     return this.queueL == this.queueR;
   }
+  
+  full() {
+    return (this.queueR + 1) % this.size == this.queueL;
+  }
 
   shift() {
-    let d = this.data[this.queueL];
+    var d = this.data[this.queueL];
     this.queueL = (this.queueL + 1) % this.size;
     return d;
   }
 
   push(d) {
+    if (this.full()) {
+      return;
+    }
     this.data[this.queueR] = d;
     this.queueR = (this.queueR + 1) % this.size;
   }
@@ -654,10 +661,10 @@ function init() {
   playerMatrix = clearMatrix({});
 
   for (var i in loots) {
-    delete loots[i];
+    remove(loots, i);
   }
   for (var i in boxes) {
-    delete boxes[i];
+    remove(boxes, i);
   }
 
   for (var i = 0; i < MAX_ROW; i++) {
@@ -717,6 +724,10 @@ function serverUpdate(delta, callback) {
       ctr++;
       callback(queue.shift(), player);
     }
+    if (ctr == 6) {
+      ctr ++;
+    }
+    console.log(ctr, queue.length());
     player.pmax += 7 - ctr;
   }
 
