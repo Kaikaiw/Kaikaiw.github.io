@@ -741,14 +741,9 @@ function serverUpdate(delta, callback) {
       pps.queue.push(pps.val);
       pps.val = 0;
 
-      // if (pps.sum >= 66) { // 1.1x
-      //   pps.ctr++;
-      //   if (pps.ctr == 3) {
-      //     clients[id].disconnect();
-      //   }
-      // } else {
-      //   pps.ctr = 0;
-      // }
+      if (pps.sum > 600) { // 作弊
+        clients[id].disconnect();
+      }
     }
   }
 
@@ -847,7 +842,6 @@ function doSpawn(id) {
     players[id].movingPPS = {
       val: 0,
       sum: 0,
-      ctr: 0,
       queue: new Queue(11),
     }
     spawnedPlayers[id] = i;
