@@ -504,12 +504,13 @@ function initGame() {
   // 开始游戏
   Resource.playSnd(types.sound.bgm);
   oldTs = +new Date();
+  var delta = 1000.0 / 60;
   setInterval(function () {
-    tick(1000.0 / 60, () => { return false; }, handleMessage);
-    render(1000.0 / 60);
-    bomb.update(1000.0 / 60);
+    tick(delta, () => { return false; }, handleMessage);
+    render(delta);
+    bomb.update(delta);
     clientProcessSend();
-  }, 1000.0 / 60); // 60FPS 游戏循环
+  }, deleta);
 }
 
 function render(delta) {
