@@ -722,17 +722,18 @@ function restartGame() {
 var THRESHOLD = 6;
 
 function serverUpdate(delta, callback) {
-  while (!msgQueue.empty()) {
+  var len = msgQueue.length();
+  for (var i = 0; i < len; i++) {
     var msg = msgQueue.shift();
     if (!(msg.id in players)) {
       continue;
     }
     var player = players[msg.id];
-    player.pctr++;
     if (player.pctr == 7 + (7 - player.ppctr)) {
       msgQueue.push(msg);
       continue;
     }
+    player.pctr++;
     callback(msg); // handleClientMessage
   }
 
