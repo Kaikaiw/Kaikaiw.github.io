@@ -729,29 +729,26 @@ function serverUpdate(delta, callback) {
     callback(msg); // handleClientMessage
   }
 
-  for (var id in players) {
-    var pps = players[id].movingPPS;
-    pps.sum += pps.val;
-    if (pps.queue.full()) {
-      pps.sum -= pps.queue.shift();
-    }
-    pps.queue.push(pps.val);
-    pps.val = 0;
-  }
-
   frameCtr++;
   if (frameCtr == 10) {
     frameCtr = 0;
     for (var id in players) {
       var pps = players[id].movingPPS;
-      if (pps.sum >= 66) { // 1.1x
-        pps.ctr++;
-        if (pps.ctr == 3) {
-          clients[id].disconnect();
-        }
-      } else {
-        pps.ctr = 0;
+      pps.sum += pps.val;
+      if (pps.queue.full()) {
+        pps.sum -= pps.queue.shift();
       }
+      pps.queue.push(pps.val);
+      pps.val = 0;
+
+      // if (pps.sum >= 66) { // 1.1x
+      //   pps.ctr++;
+      //   if (pps.ctr == 3) {
+      //     clients[id].disconnect();
+      //   }
+      // } else {
+      //   pps.ctr = 0;
+      // }
     }
   }
 
