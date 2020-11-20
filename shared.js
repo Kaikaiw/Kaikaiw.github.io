@@ -368,6 +368,10 @@ class PlayerState extends EntityState {
     var key = input.key;
     var delta = input.delta;
 
+    if (!key) {
+      return;
+    }
+
     switch (key) {
     case types.key.up:
       this.move(delta, types.dir.up);
@@ -722,6 +726,7 @@ function serverUpdate(delta, callback) {
       callback(queue.shift(), player);
     }
     player.pmax += 7 - ctr;
+    console.log(ctr, queue.length());
   }
 
   var shouldRestart = false;

@@ -238,7 +238,7 @@ class Player extends Entity {
       return;
     }
 
-    var input = {};
+    var input = {key: 0};
     if (keyPressed[types.key.up]) {
       input.key = types.key.up;
     } else if (keyPressed[types.key.right]) {
@@ -258,7 +258,7 @@ class Player extends Entity {
       Resource.playSnd(types.sound.put_bomb);
     }
 
-    if (Object.keys(input).length && !shouldProcessSpace) {
+    if (!shouldProcessSpace) {
       input.seqId = inputSeqId++;
       sendMessage({
         'opcode': types.opcode.move,
