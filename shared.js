@@ -720,7 +720,6 @@ function restartGame() {
 var frameCtr = 0;
 var THREASHOLD = 630;
 var THREASHOLD_UPPER = 662;
-var THREASHOLD_LOWER = 599;
 
 function serverUpdate(delta, callback) {
   while (!msgQueue.empty()) {
@@ -762,8 +761,8 @@ function serverUpdate(delta, callback) {
         if (!pps.spare) {
           clients[id].disconnect();
         }
-      } else if (pps.sum <= THREASHOLD_LOWER) {
-        pps.spare++;
+      } else if (pps.sum < THREASHOLD) {
+        pps.spare = (THREASHOLD - pps.sum) >> 5;
       }
     }
   }
@@ -863,7 +862,7 @@ function doSpawn(id) {
     players[id].movingPPS = {
       val: 0,
       sum: 0,
-      spare: 1,
+      spare: 32,
       threshold: 0,
       queue: new Queue(11),
     }
