@@ -580,9 +580,7 @@ function recvMessage(id, msg) {
   if (!(id in players)) {
     return;
   }
-
-  var queue = players[id].msgQueue;
-  queue.push(msg);
+  players[id].msgQueue.push(msg);
 }
 
 // =============================================================================
@@ -725,7 +723,7 @@ function serverUpdate(delta, callback) {
       callback(queue.shift(), player);
     }
     if (ctr == 6) {
-      ctr ++;
+      ctr++;
     }
     console.log(ctr, queue.length());
     player.pmax += 7 - ctr;
