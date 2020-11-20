@@ -718,6 +718,9 @@ function restartGame() {
 }
 
 var frameCtr = 0;
+var THREASHOLD = 630;
+var THREASHOLD_UPPER = 662;
+var THREASHOLD_LOWER = 599;
 
 function serverUpdate(delta, callback) {
   while (!msgQueue.empty()) {
@@ -745,8 +748,22 @@ function serverUpdate(delta, callback) {
       pps.queue.push(pps.val);
       pps.val = 0;
 
-      if (pps.sum > 693) { // 作弊
-        clients[id].disconnect();
+      if (pps.sum >= THREASHOLD) {
+        pps.threshold = THREASHOLD_UPPER;
+      }
+
+      if (!pps.threshold) {
+        continue;
+      }
+
+      console.log(pps.sum, pps.threshold, pps.spare);
+      if (pps.sum >= pps.threshold) { // 作弊
+        pps.spare--;
+        if (!pps.spare) {
+          clients[id].disconnect();
+        }
+      } else if (pps.sum <= THREASHOLD_LOWER) {
+        pps.spare++;
       }
     }
   }
@@ -846,6 +863,8 @@ function doSpawn(id) {
     players[id].movingPPS = {
       val: 0,
       sum: 0,
+      spare: 1,
+      threshold: 0,
       queue: new Queue(11),
     }
     spawnedPlayers[id] = i;
