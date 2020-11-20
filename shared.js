@@ -719,52 +719,51 @@ function restartGame() {
 
 var frameCtr = 0;
 var THREASHOLD = 630;
-var THREASHOLD_UPPER = 662;
 
 function serverUpdate(delta, callback) {
-  while (!msgQueue.empty()) {
+  var ctr = {};
+  for (id in players) {
+    ctr[id] = 0;
+  }
+
+  var len = msgQueue.length();
+  for (var i = 0; i < len; i++) {
     var msg = msgQueue.shift();
     if (!(msg.id in players)) {
       continue;
     }
 
-    var opcode = msg.msg.opcode;
-    if (msg.msg.opcode == types.opcode.move) {
-      players[msg.id].movingPPS.val++;
+    if (ctr[id] == 7) {
+      msgQueue.push(msg);
+      continue;
     }
+    ctr[id]++;
+
+    // var opcode = msg.msg.opcode;
+    // if (msg.msg.opcode == types.opcode.move) {
+    //   players[msg.id].movingPPS.val++;
+    // }
     callback(msg); // handleClientMessage
   }
 
   frameCtr++;
   if (frameCtr == 10) {
     frameCtr = 0;
-    for (var id in players) {
-      var pps = players[id].movingPPS;
-      pps.sum += pps.val;
-      if (pps.queue.full()) {
-        pps.sum -= pps.queue.shift();
-      }
-      pps.queue.push(pps.val);
-      pps.val = 0;
+    // for (var id in players) {
+    //   var pps = players[id].movingPPS;
+    //   pps.sum += pps.val;
+    //   if (pps.queue.full()) {
+    //     pps.sum -= pps.queue.shift();
+    //   }
+    //   pps.queue.push(pps.val);
+    //   pps.val = 0;
 
-      if (pps.sum >= THREASHOLD) {
-        pps.threshold = THREASHOLD_UPPER;
-      }
-
-      if (!pps.threshold) {
-        continue;
-      }
-
-      console.log(pps.sum, pps.spare);
-      if (pps.sum >= pps.threshold) { // 作弊
-        pps.spare--;
-        if (!pps.spare) {
-          clients[id].disconnect();
-        }
-      } else if (pps.sum < THREASHOLD) {
-        pps.spare = (THREASHOLD - pps.sum) >> 5;
-      }
-    }
+    //   pps.threshold -= (pps.sum - THREASHOLD);
+    //   console.log(pps.sum, pps.threshold);
+    //   if (pps.threshold <= 0) {
+    //     clients[id].disconnect();
+    //   }
+    // }
   }
 
   var shouldRestart = false;
@@ -862,7 +861,6 @@ function doSpawn(id) {
     players[id].movingPPS = {
       val: 0,
       sum: 0,
-      spare: 32,
       threshold: 0,
       queue: new Queue(11),
     }
