@@ -236,7 +236,7 @@ class PlayerState extends EntityState {
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
     this.pctr = 0;
-    this.ppctr = 7;
+    this.msgQueue = new Queue(MAX_QUEUE_SIZE);
   }
 
   downPlayer() {
@@ -572,8 +572,13 @@ function sendMessage(msg) {
 }
 
 function recvMessage(id, msg) {
-  if (!msgQueue.full()) {
-    msgQueue.push({id: id, msg: msg});
+  if (!(id in players)) {
+    return;
+  }
+
+  var queue = players[id].msgQueue;
+  if (!queue.full()) {
+    queue.push(msg);
   }
 }
 
@@ -672,23 +677,15 @@ function init() {
   }
 }
 
-function handleClientMessage(data) {
-  var id = data.id;
-  var msg = data.msg;
-
+function handleClientMessage(msg, player) {
   switch (msg.opcode) {
   case types.opcode.move:
-    if (id in players) {
-      var player = players[id];
-      msg.input.delta = 1000.0 / 60;
-      player.applyInput(msg.input);
-      player.ackSeqId = msg.input.seqId;
-    }
+    msg.input.delta = 1000.0 / 60;
+    player.applyInput(msg.input);
+    player.ackSeqId = msg.input.seqId;
   break;
   case types.opcode.put_bomb:
-    if (id in players) {
-      players[id].putBomb();
-    }
+    player.putBomb();
   break;
   }
 }
@@ -716,24 +713,15 @@ function restartGame() {
 }
 
 function serverUpdate(delta, callback) {
-  var len = msgQueue.length();
-  for (var i = 0; i < len; i++) {
-    var msg = msgQueue.shift();
-    if (!(msg.id in players)) {
-      continue;
+  for (var id in players) {
+    var player = players[id];
+    var queue = player.msgQueue;
+    var ctr = 0;
+    while (ctr != 7 + (7 - player.pctr) && !queue.empty()) {
+      ctr++;
+      callback(queue.shift(), player);
     }
-    var player = players[msg.id];
-    if (player.pctr == 7 + (7 - player.ppctr)) {
-      msgQueue.push(msg);
-      continue;
-    }
-    player.pctr++;
-    callback(msg); // handleClientMessage
-  }
-
-  for (id in players) {
-    players[id].ppctr = players[id].pctr;
-    players[id].pctr = 0;
+    player.pctr = ctr;
   }
 
   var shouldRestart = false;

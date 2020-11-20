@@ -351,7 +351,9 @@ function init() {
   // websocket
   var socket = io('ws://42.192.7.180:8081');
   socket.on('opcode', function(msg) {
-    recvMessage('server', msg);
+    if (!msgQueue.full()) {
+      msgQueue.push(msg);
+    }
   });
   server = socket;
 }
@@ -364,9 +366,7 @@ function setPlayerPosition(player, x, y, dir) {
   player.state.colId = getColID(x);
 }
 
-function handleMessage(data) {
-  var msg = data.msg;
-
+function handleMessage(msg) {
   switch (msg.opcode) {
     case types.opcode.new_player:
       localPlayerId = msg.id;
