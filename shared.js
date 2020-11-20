@@ -235,7 +235,7 @@ class PlayerState extends EntityState {
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
-    this.pctr = 0;
+    this.pmax = 7;
     this.msgQueue = new Queue(MAX_QUEUE_SIZE);
   }
 
@@ -717,11 +717,11 @@ function serverUpdate(delta, callback) {
     var player = players[id];
     var queue = player.msgQueue;
     var ctr = 0;
-    while (ctr != 7 + (7 - player.pctr) && !queue.empty()) {
+    while (ctr != player.pmax && !queue.empty()) {
       ctr++;
       callback(queue.shift(), player);
     }
-    player.pctr = ctr;
+    player.pmax += 7 - ctr;
   }
 
   var shouldRestart = false;
