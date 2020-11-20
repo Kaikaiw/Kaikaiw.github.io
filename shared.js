@@ -756,7 +756,7 @@ function serverUpdate(delta, callback) {
         continue;
       }
 
-      console.log(pps.sum, pps.threshold, pps.spare);
+      console.log(pps.sum, pps.spare);
       if (pps.sum >= pps.threshold) { // 作弊
         pps.spare--;
         if (!pps.spare) {
