@@ -235,6 +235,8 @@ class PlayerState extends EntityState {
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
+    this.pctr = 0;
+    this.ppctr = 7;
   }
 
   downPlayer() {
@@ -717,7 +719,7 @@ function restartGame() {
   }
 }
 
-var THREASHOLD = 63;
+var THRESHOLD = 6;
 
 function serverUpdate(delta, callback) {
   while (!msgQueue.empty()) {
@@ -725,24 +727,18 @@ function serverUpdate(delta, callback) {
     if (!(msg.id in players)) {
       continue;
     }
-    players[msg.id].movingPPS.val++;
+    var player = players[msg.id];
+    player.pctr++;
+    if (player.pctr == 7 + (7 - player.ppctr)) {
+      msgQueue.push(msg);
+      continue;
+    }
     callback(msg); // handleClientMessage
   }
 
-  for (var id in players) {
-    var pps = players[id].movingPPS;
-    pps.sum += pps.val;
-    if (pps.queue.full()) {
-      pps.sum -= pps.queue.shift();
-    }
-    pps.queue.push(pps.val);
-    pps.val = 0;
-
-    pps.threshold -= (pps.sum - THREASHOLD);
-    console.log(pps.sum, pps.threshold);
-    if (pps.threshold <= 0) {
-      clients[id].disconnect();
-    }
+  for (id in players) {
+    players[id].ppctr = players[id].pctr;
+    players[id].pctr = 0;
   }
 
   var shouldRestart = false;
@@ -837,12 +833,6 @@ function doSpawn(id) {
     var spawnX = spawn.where[0];
     var spawnY = spawn.where[1];
     players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
-    players[id].movingPPS = {
-      val: 0,
-      sum: 0,
-      threshold: 0,
-      queue: new Queue(11),
-    }
     spawnedPlayers[id] = i;
     spawn.spawn = false;
     numPlayers++;
