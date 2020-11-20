@@ -368,10 +368,6 @@ class PlayerState extends EntityState {
     var key = input.key;
     var delta = input.delta;
 
-    if (!key) {
-      return;
-    }
-
     switch (key) {
     case types.key.up:
       this.move(delta, types.dir.up);
