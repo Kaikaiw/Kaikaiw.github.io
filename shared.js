@@ -366,6 +366,10 @@ class PlayerState extends EntityState {
     var key = input.key;
     var delta = input.delta;
 
+    if (!key) {
+      return;
+    }
+
     switch (key) {
     case types.key.up:
       this.move(delta, types.dir.up);
@@ -741,7 +745,8 @@ function serverUpdate(delta, callback) {
       pps.queue.push(pps.val);
       pps.val = 0;
 
-      if (pps.sum > 600) { // 作弊
+      console.log(pps.sum);
+      if (pps.sum > 660) { // 作弊
         clients[id].disconnect();
       }
     }
