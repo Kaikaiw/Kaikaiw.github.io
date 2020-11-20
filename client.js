@@ -351,9 +351,7 @@ function init() {
   // websocket
   var socket = io('ws://42.192.7.180:8081');
   socket.on('opcode', function(msg) {
-    if (!msgQueue.full()) {
-      msgQueue.push(msg);
-    }
+    msgQueue.push(msg);
   });
   server = socket;
 }

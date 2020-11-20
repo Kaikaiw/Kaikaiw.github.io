@@ -136,10 +136,6 @@ class Queue {
     return this.queueL == this.queueR;
   }
 
-  full() {
-    return (this.queueR + 1) % this.size == this.queueL;
-  }
-
   shift() {
     let d = this.data[this.queueL];
     this.queueL = (this.queueL + 1) % this.size;
@@ -570,9 +566,7 @@ sendQueue = new Queue(MAX_QUEUE_SIZE)
 clients = {};
 
 function sendMessage(msg) {
-  if (!sendQueue.full()) {
-    sendQueue.push(msg);
-  }
+  sendQueue.push(msg);
 }
 
 function recvMessage(id, msg) {
@@ -581,9 +575,7 @@ function recvMessage(id, msg) {
   }
 
   var queue = players[id].msgQueue;
-  if (!queue.full()) {
-    queue.push(msg);
-  }
+  queue.push(msg);
 }
 
 // =============================================================================
@@ -726,7 +718,6 @@ function serverUpdate(delta, callback) {
       callback(queue.shift(), player);
     }
     player.pmax += 7 - ctr;
-    console.log(ctr, queue.length());
   }
 
   var shouldRestart = false;
