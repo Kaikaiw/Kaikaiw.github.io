@@ -745,8 +745,7 @@ function serverUpdate(delta, callback) {
       pps.queue.push(pps.val);
       pps.val = 0;
 
-      console.log(pps.sum);
-      if (pps.sum > 660) { // 作弊
+      if (pps.sum > 693) { // 作弊
         clients[id].disconnect();
       }
     }
