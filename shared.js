@@ -719,8 +719,6 @@ function restartGame() {
   }
 }
 
-var THRESHOLD = 6;
-
 function serverUpdate(delta, callback) {
   var len = msgQueue.length();
   for (var i = 0; i < len; i++) {
