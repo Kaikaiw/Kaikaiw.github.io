@@ -713,6 +713,7 @@ function restartGame() {
   }
 }
 
+var totalCtr = 0;
 function serverUpdate(delta, callback) {
   for (var id in players) {
     var player = players[id];
@@ -722,12 +723,10 @@ function serverUpdate(delta, callback) {
       ctr++;
       callback(queue.shift(), player);
     }
-    if (ctr == 6) {
-      ctr++;
-    }
-    console.log(ctr, queue.length());
     player.pmax += 7 - ctr;
+    totalCtr += ctr;
   }
+  console.log(totalCtr);
 
   var shouldRestart = false;
   for (var id in players) {
