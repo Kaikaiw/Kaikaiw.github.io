@@ -717,53 +717,32 @@ function restartGame() {
   }
 }
 
-var frameCtr = 0;
-var THREASHOLD = 630;
+var THREASHOLD = 63;
 
 function serverUpdate(delta, callback) {
-  var ctr = {};
-  for (id in players) {
-    ctr[id] = 0;
-  }
-
-  var len = msgQueue.length();
-  for (var i = 0; i < len; i++) {
+  while (!msgQueue.empty()) {
     var msg = msgQueue.shift();
     if (!(msg.id in players)) {
       continue;
     }
-
-    if (ctr[id] == 7) {
-      msgQueue.push(msg);
-      continue;
-    }
-    ctr[id]++;
-
-    // var opcode = msg.msg.opcode;
-    // if (msg.msg.opcode == types.opcode.move) {
-    //   players[msg.id].movingPPS.val++;
-    // }
+    players[msg.id].movingPPS.val++;
     callback(msg); // handleClientMessage
   }
 
-  frameCtr++;
-  if (frameCtr == 10) {
-    frameCtr = 0;
-    // for (var id in players) {
-    //   var pps = players[id].movingPPS;
-    //   pps.sum += pps.val;
-    //   if (pps.queue.full()) {
-    //     pps.sum -= pps.queue.shift();
-    //   }
-    //   pps.queue.push(pps.val);
-    //   pps.val = 0;
+  for (var id in players) {
+    var pps = players[id].movingPPS;
+    pps.sum += pps.val;
+    if (pps.queue.full()) {
+      pps.sum -= pps.queue.shift();
+    }
+    pps.queue.push(pps.val);
+    pps.val = 0;
 
-    //   pps.threshold -= (pps.sum - THREASHOLD);
-    //   console.log(pps.sum, pps.threshold);
-    //   if (pps.threshold <= 0) {
-    //     clients[id].disconnect();
-    //   }
-    // }
+    pps.threshold -= (pps.sum - THREASHOLD);
+    console.log(pps.sum, pps.threshold);
+    if (pps.threshold <= 0) {
+      clients[id].disconnect();
+    }
   }
 
   var shouldRestart = false;
