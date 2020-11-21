@@ -236,7 +236,7 @@ class Player extends Entity {
       return;
     }
 
-    var input = {key: 0, seqId: inputSeqId++};
+    var input = {};
     if (keyPressed[types.key.up]) {
       input.key = types.key.up;
     } else if (keyPressed[types.key.right]) {
@@ -254,7 +254,8 @@ class Player extends Entity {
       Resource.playSnd(types.sound.put_bomb);
     }
 
-    if (!shouldProcessSpace) {
+    if (Object.keys(input).length && !shouldProcessSpace) {
+      input.seqId = inputSeqId++;
       server.volatile.emit('opcode', {opcode: types.opcode.move, input: input},);
       var localInput = Object.assign({}, input);
       localInput.delta = delta;
@@ -312,8 +313,6 @@ class Wave extends Entity {
 // 画布
 var ctx;
 var score;
-// 预测补正
-messageSequenceId = 0;
 // 键输入
 validKeys = {};
 validKeys[types.key.up] = 1;

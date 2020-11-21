@@ -234,7 +234,7 @@ class PlayerState extends EntityState {
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
-    this.msgQueue = new Queue(7);
+    this.msgQueue = new Queue(63);
   }
 
   downPlayer() {
@@ -561,9 +561,8 @@ var lootMatrix;
 // =============================================================================
 //  网络
 // =============================================================================
-msgQueue = new Queue(MAX_QUEUE_SIZE);
+msgQueue = new Queue(MAX_QUEUE_SIZE); // 客户端
 clients = {};
-
 function recvMessage(id, msg) {
   if (!(id in players)) {
     return;
@@ -707,7 +706,9 @@ function serverUpdate(delta, callback) {
   for (var id in players) {
     var player = players[id];
     var queue = player.msgQueue;
-    while (!queue.empty()) {
+    var ctr = 0;
+    while (ctr < 7 && !queue.empty()) {
+      ctr++;
       callback(queue.shift(), player);
     }
   }
