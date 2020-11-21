@@ -234,7 +234,6 @@ class PlayerState extends EntityState {
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
-    this.pmax = 6;
     this.msgQueue = new Queue(MAX_QUEUE_SIZE);
   }
 
@@ -704,19 +703,13 @@ function restartGame() {
   }
 }
 
-var frameCtr = 0;
 function serverUpdate(delta, callback) {
-  frameCtr = (frameCtr + 1) % 3;
   for (var id in players) {
     var player = players[id];
     var queue = player.msgQueue;
-    var ctr = 0;
-    while (ctr != (player.pmax + !frameCtr) && !queue.empty()) {
-      ctr++;
+    while (!queue.empty()) {
       callback(queue.shift(), player);
     }
-    player.pmax += 6 + !frameCtr - ctr;
-    console.log(ctr, queue.length());
   }
 
   var shouldRestart = false;
