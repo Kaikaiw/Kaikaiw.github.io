@@ -234,7 +234,7 @@ class PlayerState extends EntityState {
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
-    this.msgQueue = new Queue(MAX_QUEUE_SIZE);
+    this.msgQueue = new Queue(7);
   }
 
   downPlayer() {
