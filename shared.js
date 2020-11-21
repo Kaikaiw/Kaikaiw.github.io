@@ -313,7 +313,7 @@ class PlayerState extends EntityState {
     var diffx = toX >= this.x ? toX - this.x : this.x - toX;
     var diffy = toY >= this.y ? toY - this.y : this.y - toY;
 
-    var minus = diffx + diffy - 2 * this.speed * 1000.0 / SERVER_FRAME;
+    var minus = diffx + diffy - this.speed * (1000.0 / SERVER_FRAME + 34);
     if (minus > 0) {
       return;
     }
