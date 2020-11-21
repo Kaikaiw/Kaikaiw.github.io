@@ -56,10 +56,8 @@ Resource.playSnd = function(key) {
   var promise = Resource.sndMap[key].play();
   if (promise != undefined) {
     promise.then(_ => {
-      // Autoplay started!
     }).catch(error => {
       setTimeout(function(){ Resource.playSnd(key); }, 1000);
-      // Autoplay was prevented.
     });
   }
 };
@@ -150,9 +148,9 @@ class Block extends Entity {
   constructor(x, y) {
     super();
     // 魔法数字...
-    this.state = new EntityState(-1, x, y, 64, 64);
+    this.state = new EntityState(-1, x, y, UNIT_WIDTH, UNIT_HEIGHT);
     this.sprite =
-        new Sprite(types.entity.block, 64, 64, UNIT_WIDTH, UNIT_HEIGHT);
+        new Sprite(types.entity.block, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
     this.sprite.startX =
         Math.floor(Math.random() * 5) * this.sprite.sizeX; // 0,1,2,3,4
     this.sprite.startY = 0;
@@ -292,7 +290,7 @@ class Wave extends Entity {
   constructor(id, rowId, colId, dir) {
     super();
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.wave, 64, 64, 64, 64);
+    this.sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
     this.sprite.startY = ((dir + 1) % 4) * this.sprite.sizeY;
     this.sprite.cycleTime = 250;
     this.sprite.maxCycle = 2;
