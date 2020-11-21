@@ -234,7 +234,7 @@ class PlayerState extends EntityState {
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
-    this.pmax = 2;
+    this.pmax = 7;
     this.msgQueue = new Queue(MAX_QUEUE_SIZE);
   }
 
@@ -289,43 +289,13 @@ class PlayerState extends EntityState {
 
     var toColId = getColID(toX);
     var toRowId = getRowID(toY);
+    if (!bind(toRowId, toColId)) {
+      return;
+    }
     if ((toRowId != this.rowId || toColId != this.colId) &&
         (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId])) {
       return;
     }
-
-    if (waveMatrix[toRowId][toColId]) {
-      this.downPlayer();
-    } 
-
-    this.x = toX;
-    this.y = toY;
-    this.rowId = toRowId;
-    this.colId = toColId;
-  }
-
-  applyState(state) {
-    var seqDiff = (state.seqId - this.ackSeqId) / 6;
-    this.dir = state.dir;
-    this.ackSeqId = state.seqId;
-
-    var toX = state.x;
-    var toY = state.y;
-    var diffx = toX >= this.x ? toX - this.x : this.x - toX;
-    var diffy = toY >= this.y ? toY - this.y : this.y - toY;
-
-    var minus = diffx + diffy - seqDiff * this.speed * 1000.0 / SERVER_FRAME;
-    if (minus > 1) {
-      return;
-    }
-
-    var toColId = getColID(toX);
-    var toRowId = getRowID(toY);
-    if ((toRowId != this.rowId || toColId != this.colId) &&
-        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId])) {
-      return;
-    }
-
     if (waveMatrix[toRowId][toColId]) {
       this.downPlayer();
     } 
@@ -344,7 +314,6 @@ class PlayerState extends EntityState {
         this.score++;
       }
     }
-
 
     var lootId = lootMatrix[this.rowId][this.colId];
     if (lootId) {
@@ -396,6 +365,7 @@ class PlayerState extends EntityState {
   }
 
   applyInput(input) {
+    this.ackSeqId = input.seqId;
     var key = input.key;
     var delta = input.delta;
 
@@ -700,7 +670,8 @@ function init() {
 function handleClientMessage(msg, player) {
   switch (msg.opcode) {
   case types.opcode.move:
-    player.applyState(msg.state);
+    msg.input.delta = 1000.0 / 60.0;
+    player.applyInput(msg.input);
   break;
   case types.opcode.put_bomb:
     player.putBomb();
@@ -742,7 +713,8 @@ function serverUpdate(delta, callback) {
       ctr++;
       callback(queue.shift(), player);
     }
-    player.pmax += 2 - ctr;
+    player.pmax += 7 - ctr;
+    console.log(ctr, queue.length());
   }
 
   var shouldRestart = false;

@@ -206,7 +206,6 @@ class Player extends Entity {
     this.sprite.cycleTime = 170; // ms
     this.state.dir = types.dir.down;
     this.spacePressed = false;
-    this.seqId = 0;
   }
 
   downPlayer() {
@@ -237,7 +236,7 @@ class Player extends Entity {
       return;
     }
 
-    var input = {key: 0, seqId: inputSeqId};
+    var input = {key: 0, seqId: inputSeqId++};
     if (keyPressed[types.key.up]) {
       input.key = types.key.up;
     } else if (keyPressed[types.key.right]) {
@@ -255,10 +254,13 @@ class Player extends Entity {
       Resource.playSnd(types.sound.put_bomb);
     }
 
-    input.delta = delta;
-    this.applyInput(input);
-    pendingInputs.push(input);
-    this.seqId = inputSeqId++;
+    if (!shouldProcessSpace) {
+      server.volatile.emit('opcode', {opcode: types.opcode.move, input: input},);
+      var localInput = Object.assign({}, input);
+      localInput.delta = delta;
+      this.applyInput(localInput);
+      pendingInputs.push(localInput);
+    }
   }
 }
 localPlayerId = '';
@@ -457,23 +459,6 @@ function handleMessage(msg) {
   }
 }
 
-function clientProcessSend() {
-  if (!(localPlayerId in players)) {
-    return;
-  }
-
-  var player = players[localPlayerId];
-  server.volatile.emit('opcode', {
-    opcode: types.opcode.move,
-    state: {
-      seqId: player.seqId,
-      x: player.state.x,
-      y: player.state.y,
-      dir: player.state.dir,
-    }
-  });
-}
-
 var box = new Box(0, -1, -1);
 var bomb = new Bomb(0, -1, -1);
 
@@ -508,9 +493,6 @@ function initGame() {
     render(delta);
     bomb.update(delta);
   }, delta);
-  setInterval(function () {
-    clientProcessSend();
-  }, 1000.0 / SERVER_FRAME);
 }
 
 function render(delta) {
