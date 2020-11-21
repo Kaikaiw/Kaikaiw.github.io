@@ -301,6 +301,37 @@ class PlayerState extends EntityState {
     this.y = toY;
     this.rowId = toRowId;
     this.colId = toColId;
+  }
+
+  applyState(state) {
+    this.dir = state.dir;
+    this.ackSeqId = state.seqId;
+
+    var toX = state.x;
+    var toY = state.y;
+    var diffx = toX >= this.x ? toX - this.x : this.x - toX;
+    var diffy = toY >= this.y ? toY - this.y : this.y - toY;
+
+    var minus = diffx + diffy - 2 * this.speed * 1000.0 / SERVER_FRAME;
+    if (minus > 0) {
+      return;
+    }
+
+    var toColId = getColID(toX);
+    var toRowId = getRowID(toY);
+    if ((toRowId != this.rowId || toColId != this.colId) &&
+        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId])) {
+      return;
+    }
+
+    if (waveMatrix[toRowId][toColId]) {
+      this.downPlayer();
+    } 
+
+    this.x = toX;
+    this.y = toY;
+    this.rowId = toRowId;
+    this.colId = toColId;
 
     for (var id in playerMatrix[this.rowId][this.colId]) {
       if (id == this.id) {
@@ -318,7 +349,7 @@ class PlayerState extends EntityState {
       this.pickupLoot(loots[lootId].type);
       remove(loots, lootId, lootMatrix)
 
-      sendMessage({to: this.id, data: {opcode: types.opcode.pickup_loot,}});
+      clients[this.id].emit('opcode', {opcode: types.opcode.pickup_loot,});
     }
   }
 
@@ -365,10 +396,6 @@ class PlayerState extends EntityState {
   applyInput(input) {
     var key = input.key;
     var delta = input.delta;
-
-    if (!key) {
-      return;
-    }
 
     switch (key) {
     case types.key.up:
@@ -564,12 +591,7 @@ var lootMatrix;
 //  网络
 // =============================================================================
 msgQueue = new Queue(MAX_QUEUE_SIZE);
-sendQueue = new Queue(MAX_QUEUE_SIZE)
 clients = {};
-
-function sendMessage(msg) {
-  sendQueue.push(msg);
-}
 
 function recvMessage(id, msg) {
   if (!(id in players)) {
@@ -676,9 +698,7 @@ function init() {
 function handleClientMessage(msg, player) {
   switch (msg.opcode) {
   case types.opcode.move:
-    msg.input.delta = 1000.0 / 60;
-    player.applyInput(msg.input);
-    player.ackSeqId = msg.input.seqId;
+    player.applyState(msg.state);
   break;
   case types.opcode.put_bomb:
     player.putBomb();
@@ -688,16 +708,13 @@ function handleClientMessage(msg, player) {
 
 function broadcastState() {
   for (var id in players) {
-    sendMessage({
-      to: id,
-      data: {
-        opcode: types.opcode.move,
-        players: players,
-        bombs: matrixToIntArray(bombMatrix),
-        waves: waves,
-        boxes: matrixToIntArray(boxMatrix),
-        loots: loots,
-      }
+    clients[id].volatile.emit('opcode', {
+      opcode: types.opcode.move,
+      players: players,
+      bombs: matrixToIntArray(bombMatrix),
+      waves: waves,
+      boxes: matrixToIntArray(boxMatrix),
+      loots: loots,
     });
   }
 }
@@ -788,15 +805,6 @@ function update(delta, serverUpdateCallback, callback) {
   for (var i in players) { players[i].update(delta); }
 }
 
-function processSend() {
-  while (!sendQueue.empty()) {
-    var msg = sendQueue.shift();
-    if (msg.to in clients) {
-      clients[msg.to].volatile.emit('opcode', msg.data);
-    }
-  }
-}
-
 function tick(delta, serverUpdateCallback, callback) {
   update(delta, serverUpdateCallback, callback);
 }
@@ -824,7 +832,7 @@ function doSpawn(id) {
     break;
   }
 
-  sendMessage({to: id, data: {opcode: types.opcode.new_player, id: id,}});
+  clients[id].emit('opcode', {opcode: types.opcode.new_player, id: id,});
 }
 
 function spawnPlayer(id, socket) {
@@ -861,9 +869,7 @@ E.UNIT_HEIGHT = UNIT_HEIGHT;
 E.init = init;
 E.tick = tick;
 E.spawnPlayer = spawnPlayer;
-E.sendMessage = sendMessage;
 E.recvMessage = recvMessage;
-E.processSend = processSend;
 E.handleClientMessage = handleClientMessage;
 E.serverUpdate = serverUpdate;
 E.SERVER_FRAME = SERVER_FRAME;

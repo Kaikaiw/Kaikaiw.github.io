@@ -208,6 +208,7 @@ class Player extends Entity {
     this.sprite.cycleTime = 170; // ms
     this.state.dir = types.dir.down;
     this.spacePressed = false;
+    this.seqId = 0;
   }
 
   downPlayer() {
@@ -238,7 +239,7 @@ class Player extends Entity {
       return;
     }
 
-    var input = {key: 0};
+    var input = {key: 0, seqId: inputSeqId};
     if (keyPressed[types.key.up]) {
       input.key = types.key.up;
     } else if (keyPressed[types.key.right]) {
@@ -252,23 +253,15 @@ class Player extends Entity {
     var shouldProcessSpace = !this.spacePressed && keyPressed[types.key.space];
     this.spacePressed = keyPressed[types.key.space];
     if (shouldProcessSpace && this.state.currentBombNumber < this.state.maxBombNumber) {
-      sendMessage({
-        'opcode': types.opcode.put_bomb,
-      });
+      server.emit('opcode', {opcode: types.opcode.put_bomb,});
       Resource.playSnd(types.sound.put_bomb);
     }
 
     if (!shouldProcessSpace) {
-      input.seqId = inputSeqId++;
-      sendMessage({
-        'opcode': types.opcode.move,
-        'input': input,
-      });
-
-      var localInput = Object.assign({}, input);
-      localInput.delta = delta;
-      this.applyInput(localInput);
-      pendingInputs.push(localInput);
+      input.delta = delta;
+      this.applyInput(input);
+      pendingInputs.push(input);
+      this.seqId = inputSeqId++;
     }
   }
 }
@@ -470,9 +463,20 @@ function handleMessage(msg) {
 }
 
 function clientProcessSend() {
-  while (!sendQueue.empty()) {
-    server.volatile.emit('opcode', sendQueue.shift());
+  if (!(localPlayerId in players)) {
+    return;
   }
+
+  var player = players[localPlayerId];
+  server.volatile.emit('opcode', {
+    opcode: types.opcode.move,
+    state: {
+      seqId: player.seqId,
+      x: player.state.x,
+      y: player.state.y,
+      dir: player.state.dir,
+    }
+  });
 }
 
 var box = new Box(0, -1, -1);
@@ -508,8 +512,10 @@ function initGame() {
     tick(delta, () => { return false; }, handleMessage);
     render(delta);
     bomb.update(delta);
-    clientProcessSend();
   }, delta);
+  setInterval(function () {
+    clientProcessSend();
+  }, 1000.0 / SERVER_FRAME);
 }
 
 function render(delta) {

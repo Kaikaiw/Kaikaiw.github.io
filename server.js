@@ -8,7 +8,6 @@ function initGame() {
   E.init();
   setInterval(function () {
      E.tick(1000.0 / E.SERVER_FRAME, E.serverUpdate, E.handleClientMessage);
-     E.processSend(); 
   }, 1000.0 / E.SERVER_FRAME);
 }
 
