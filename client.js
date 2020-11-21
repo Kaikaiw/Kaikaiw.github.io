@@ -510,7 +510,7 @@ function initGame() {
     render(delta);
     bomb.update(delta);
     clientProcessSend();
-  }, deleta);
+  }, delta);
 }
 
 function render(delta) {
