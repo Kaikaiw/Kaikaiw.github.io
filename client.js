@@ -342,8 +342,7 @@ function init() {
   initGame();
 
   // websocket
-  // var socket = io('ws://42.192.7.180:8081');
-  var socket = io('ws://0.0.0.0:8081', {
+  var socket = io('ws://' + URL + '8081', {
     withCredentials: true,
   });
   socket.on('opcode', function(msg) {

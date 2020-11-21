@@ -61,6 +61,7 @@ types = {
 // =============================================================================
 //  全局配置 / 坐标转换
 // =============================================================================
+URL = '0.0.0.0:';
 SERVER_FRAME = 10;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131071;
@@ -875,3 +876,4 @@ E.serverUpdate = serverUpdate;
 E.SERVER_FRAME = SERVER_FRAME;
 E.prepID = prepID;
 E.disconnectPlayer = disconnectPlayer;
+E.URL = URL
