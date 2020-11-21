@@ -305,6 +305,7 @@ class PlayerState extends EntityState {
   }
 
   applyState(state) {
+    var seqDiff = (state.seqId - this.ackSeqId) / 6;
     this.dir = state.dir;
     this.ackSeqId = state.seqId;
 
@@ -313,8 +314,8 @@ class PlayerState extends EntityState {
     var diffx = toX >= this.x ? toX - this.x : this.x - toX;
     var diffy = toY >= this.y ? toY - this.y : this.y - toY;
 
-    var minus = diffx + diffy - this.speed * (1000.0 / SERVER_FRAME + 34);
-    if (minus > 0) {
+    var minus = diffx + diffy - seqDiff * this.speed * 1000.0 / SERVER_FRAME;
+    if (minus > 1) {
       return;
     }
 

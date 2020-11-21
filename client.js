@@ -257,12 +257,10 @@ class Player extends Entity {
       Resource.playSnd(types.sound.put_bomb);
     }
 
-    if (!shouldProcessSpace) {
-      input.delta = delta;
-      this.applyInput(input);
-      pendingInputs.push(input);
-      this.seqId = inputSeqId++;
-    }
+    input.delta = delta;
+    this.applyInput(input);
+    pendingInputs.push(input);
+    this.seqId = inputSeqId++;
   }
 }
 localPlayerId = '';
