@@ -52,13 +52,8 @@ types = {
   opcode: {
     put_bomb:          2,
     explode:           4,
-    wave:              5,
-    loot:              8,
     pickup_loot:       9,
-    player:           12,
     move:             14,
-    bomb:             15,
-    box:              16,
     new_player:       17,
   }
 };
@@ -693,11 +688,17 @@ function handleClientMessage(msg, player) {
 
 function broadcastState() {
   for (var id in players) {
-    sendMessage({to: id, data: { opcode: types.opcode.player, players: players,}});
-    sendMessage({to: id, data: { opcode: types.opcode.bomb, bombs: matrixToIntArray(bombMatrix),}});
-    sendMessage({to: id, data: { opcode: types.opcode.wave, waves: waves,}});
-    sendMessage({to: id, data: { opcode: types.opcode.box, boxes: matrixToIntArray(boxMatrix),}});
-    sendMessage({to: id, data: { opcode: types.opcode.loot, loots: loots,}});
+    sendMessage({
+      to: id,
+      data: {
+        opcode: types.opcode.move,
+        players: players,
+        bombs: matrixToIntArray(bombMatrix),
+        waves: waves,
+        boxes: matrixToIntArray(boxMatrix),
+        loots: loots,
+      }
+    });
   }
 }
 
@@ -713,7 +714,6 @@ function restartGame() {
   }
 }
 
-var totalCtr = 0;
 function serverUpdate(delta, callback) {
   for (var id in players) {
     var player = players[id];
@@ -724,9 +724,7 @@ function serverUpdate(delta, callback) {
       callback(queue.shift(), player);
     }
     player.pmax += 7 - ctr;
-    totalCtr += ctr;
   }
-  console.log(totalCtr);
 
   var shouldRestart = false;
   for (var id in players) {
@@ -794,7 +792,7 @@ function processSend() {
   while (!sendQueue.empty()) {
     var msg = sendQueue.shift();
     if (msg.to in clients) {
-      clients[msg.to].emit('opcode', msg.data);
+      clients[msg.to].volatile.emit('opcode', msg.data);
     }
   }
 }

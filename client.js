@@ -349,7 +349,10 @@ function init() {
   initGame();
 
   // websocket
-  var socket = io('ws://42.192.7.180:8081');
+  // var socket = io('ws://42.192.7.180:8081');
+  var socket = io('ws://0.0.0.0:8081', {
+    withCredentials: true,
+  });
   socket.on('opcode', function(msg) {
     msgQueue.push(msg);
   });
@@ -369,7 +372,7 @@ function handleMessage(msg) {
     case types.opcode.new_player:
       localPlayerId = msg.id;
     break;
-    case types.opcode.player:
+    case types.opcode.move:
       for (var id in players) {
         if (!(id in msg.players)) {
           delete players[id];
@@ -417,8 +420,7 @@ function handleMessage(msg) {
           player.revivePlayer();
         }
       }
-    break;
-    case types.opcode.bomb:
+
       var newBombMatrix = intArrayToMatrix(msg.bombs);
       var bombed = false;
       for (var i = 0; i < MAX_ROW; i++) {
@@ -433,8 +435,7 @@ function handleMessage(msg) {
       if (bombed) {
         Resource.playSnd(types.sound.explode);
       }
-    break;
-    case types.opcode.wave:
+
       for (var id in waves) {
         if (!(id in msg.waves)) {
           clientRemove(waves, id, waveMatrix);
@@ -447,11 +448,9 @@ function handleMessage(msg) {
           waves[id] = wave;
         }
       }
-    break;
-    case types.opcode.box:
+
       boxMatrix = intArrayToMatrix(msg.boxes);
-    break;
-    case types.opcode.loot:
+
       for (var id in loots) {
         if (!(id in msg.loots)) {
           delete loots[id];
@@ -472,7 +471,7 @@ function handleMessage(msg) {
 
 function clientProcessSend() {
   while (!sendQueue.empty()) {
-    server.emit('opcode', sendQueue.shift());
+    server.volatile.emit('opcode', sendQueue.shift());
   }
 }
 

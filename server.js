@@ -15,7 +15,13 @@ function initGame() {
 function init() {
   initGame();
   // 网络
-  var io = require('socket.io')(8081);
+  var io = require('socket.io')(8081, {
+    cors: {
+      origin: "http://0.0.0.0:8000",
+      methods: ["GET", "POST"],
+      credentials: true
+    }
+  });
   io.on('connection', (socket) => {
     var id = socket.request.connection.remoteAddress;
     E.spawnPlayer(id, socket);
