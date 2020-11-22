@@ -505,7 +505,7 @@ function initGame() {
   // 开始游戏
   Resource.playSnd(types.sound.bgm);
   oldTs = +new Date();
-  var delta = 1000.0 / 60;
+  var delta = 1000.0 / FRAME_RATE;
   setInterval(function () {
     tick(delta, () => { return false; }, handleMessage);
     render(delta);
