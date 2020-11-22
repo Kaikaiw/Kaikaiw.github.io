@@ -386,6 +386,8 @@ function handleMessage(msg) {
   switch (msg.o) {
     case types.opcode.new_player:
       localPlayerId = msg.id;
+    case types.opcode.new_map:
+      stoneMatrix = clearMatrix();
       var map = maps[msg.m];
       for (var i = 0; i < MAX_ROW; i++) {
         for (var j = 0; j < MAX_COL; j++) {

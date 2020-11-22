@@ -56,6 +56,7 @@ types = {
     pickup_loot:       9,
     move:             14,
     new_player:       17,
+    new_map:          18,
   }
 };
 
@@ -704,7 +705,7 @@ function stringArrayToMatrix(array) {
 
 
 function clearMatrix(obj) {
-  matrix = new Array(MAX_ROW);
+  var matrix = new Array(MAX_ROW);
   for (var i = 0; i < MAX_ROW; i++) {
     matrix[i] = new Array(MAX_COL);
     for (var j = 0; j < MAX_COL; j++) {
@@ -758,6 +759,7 @@ function handleClientMessage(msg, player) {
   break;
   case types.opcode.put_bomb:
     player.putBomb();
+    restartGame();
   break;
   }
 }
@@ -823,6 +825,9 @@ function restartGame() {
   for (var i in players) {
     doSpawn(i);
   }
+  for (var id in players) {
+    clients[id].emit('opcode', {o: types.opcode.new_map, m: currentMap});
+  }
 }
 
 function serverUpdate(delta, callback) {
@@ -839,7 +844,7 @@ function serverUpdate(delta, callback) {
   var shouldRestart = false;
   for (var id in players) {
     var player = players[id];
-    shouldRestart |= player.score >= 10;
+    shouldRestart |= player.score >= 5;
   }
 
   if (shouldRestart) {
