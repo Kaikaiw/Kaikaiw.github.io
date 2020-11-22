@@ -181,6 +181,20 @@ class Block extends Entity {
 var blockMatrix;
 
 // =============================================================================
+//  障碍
+// =============================================================================
+class Stone extends Entity {
+  constructor(x, y) {
+    super();
+    // 魔法数字...
+    this.sprite =
+        new Sprite(types.entity.stone, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
+    this.sprite.cycleTime = -1;
+    this.sprite.maxCycle = 1;
+  }
+}
+
+// =============================================================================
 //  盒子
 // =============================================================================
 class Box extends Entity {
@@ -441,6 +455,7 @@ function handleMessage(msg) {
       waveMatrix = stringArrayToMatrix(msg.waves);
       boxMatrix = intArrayToMatrix(msg.boxes);
       lootMatrix = stringArrayToMatrix(msg.loots);
+      stoneMatrix = intArrayToMatrix(msg.stones);
     break;
     case types.opcode.pickup_loot:
       Resource.playSnd(types.sound.pickup_loot);
@@ -450,6 +465,7 @@ function handleMessage(msg) {
 
 // 享元
 var block = new Block(0, 0);
+var stone = new Stone(0, 0);
 var box = new Box(0, -1, -1);
 var bomb = new Bomb(0, -1, -1);
 var loot = new Loot(0, -1, -1, 0);
@@ -472,6 +488,7 @@ function initGame() {
   }
 
   boxMatrix = clearMatrix();
+  stoneMatrix = clearMatrix();
   bombMatrix = clearMatrix();
   lootMatrix = clearMatrix();
   waveMatrix = clearMatrix();
@@ -502,6 +519,9 @@ function render(delta) {
       if (boxMatrix[i][j]) {
         box.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
       }
+      if (stoneMatrix[i][j]) {
+        stone.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
+      }
       if (waveMatrix[i][j]) {
         wave.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, undefined, (waveMatrix[i][j] % 4) * wave.sprite.sizeY);
       }
@@ -516,8 +536,8 @@ function render(delta) {
       }
     }
 
-    for (var playerId in playersToRender) {
-      players[playersToRender[playerId]].render(delta);
+    for (var id in playersToRender) {
+      players[playersToRender[id]].render(delta);
     }
   }
 
@@ -543,6 +563,7 @@ Resource.loadPngs([ // [类型ID, 文件]
   [         types.entity.bomb,   'bomb.png'],
   [         types.entity.wave,   'wave.png'],
   [        types.entity.block,  'block.png'],
+  [        types.entity.stone,  'stone.png'],
   [          types.entity.box,    'box.png'],
   [         types.entity.loot,   'loot.png'],
   [types.entity.player_downed,   'netu.png']],

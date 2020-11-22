@@ -18,7 +18,8 @@ types = {
     block:             5,
     box:               6,
     loot:              7,
-    player_downed:     8
+    player_downed:     8,
+    stone:             9
   },
   // 方向
   dir: {
@@ -75,20 +76,52 @@ HEIGHT = UNIT_HEIGHT * MAX_ROW;
 MAX_PLAYERS = 4;
 numPlayers = 0;
 // 硬编码地图
-map = [
-  [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0],
-  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [0,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
-  [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0]
+maps = [
+  [
+    [0,0,1,1,0,0,0,1,0,0,0,1,1,0,0],
+    [0,2,1,0,1,1,1,0,1,1,1,0,1,2,0],
+    [1,1,0,1,0,1,0,1,0,1,0,1,0,1,1],
+    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,1,1,1,1,2,2,2,1,1,1,1,0,1],
+    [1,1,0,1,0,1,1,1,1,1,0,1,0,1,1],
+    [1,1,1,0,1,1,1,1,1,1,1,0,1,1,1],
+    [1,1,1,1,0,1,0,1,0,1,0,1,1,1,1],
+    [1,1,0,1,1,0,1,1,1,0,1,1,0,1,1],
+    [1,2,0,1,1,1,0,0,0,1,1,1,0,2,1],
+    [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0],
+  ],
+  [
+    [0,0,1,1,1,1,0,0,0,1,1,1,1,0,0],
+    [0,2,1,2,1,2,0,2,0,2,1,2,1,2,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,2,1,2,1,2,1,2,1,2,1,2,1,2,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,2,1,2,1,2,1,2,1,2,1,2,1,2,0],
+    [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0],
+    [0,2,1,2,1,2,1,2,1,2,1,2,1,2,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,2,1,2,1,2,1,2,1,2,1,2,1,2,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,2,1,2,1,2,0,2,0,2,1,2,1,2,0],
+    [0,0,1,1,1,1,0,0,0,1,1,1,1,0,0],
+  ],
+  [
+    [0,1,1,1,1,0,0,0,1,0,2,1,2,0,2],
+    [0,2,1,2,1,2,1,0,0,2,1,1,0,0,0],
+    [0,0,1,1,1,0,0,1,1,0,2,1,2,1,2],
+    [1,2,1,2,1,2,1,0,0,2,1,1,1,1,1],
+    [1,1,1,1,1,0,0,0,1,0,2,1,2,1,2],
+    [1,2,1,2,1,2,1,1,0,0,1,1,1,1,1],
+    [2,0,2,0,2,0,0,0,1,0,2,0,2,0,2],
+    [1,1,1,1,1,0,1,0,0,2,1,2,1,2,1],
+    [2,1,2,1,2,0,0,1,1,0,1,1,1,1,1],
+    [1,1,1,1,1,2,1,0,0,2,1,2,1,2,1],
+    [2,0,2,1,2,0,0,0,1,0,1,1,1,1,0],
+    [0,0,1,1,1,2,1,1,0,2,1,2,1,2,0],
+    [2,0,2,1,2,0,0,0,1,0,1,1,1,0,0],
+  ],
 ]
 
 function bind(rowId, colId) {
@@ -215,6 +248,7 @@ class BoxState extends EntityState {
 boxes = {};
 toDestroyBoxes = {}
 var boxMatrix;
+var stoneMatrix;
 
 // =============================================================================
 //  玩家核心
@@ -292,7 +326,7 @@ class PlayerState extends EntityState {
       return;
     }
     if ((toRowId != this.rowId || toColId != this.colId) &&
-        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId])) {
+        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId] || stoneMatrix[toRowId][toColId])) {
       return;
     }
 
@@ -331,7 +365,9 @@ class PlayerState extends EntityState {
     if (this.downed) {
       return;
     }
-    if (bombMatrix[this.rowId][this.colId] || boxMatrix[this.rowId][this.colId]) {
+    if (bombMatrix[this.rowId][this.colId] ||
+      boxMatrix[this.rowId][this.colId] ||
+      stoneMatrix[this.rowId][this.colId]) {
       return;
     }
 
@@ -365,6 +401,8 @@ class PlayerState extends EntityState {
 
         this.x = x0 + (x1 - x0) * (renderTs - t0) / (t1 - t0);
         this.y = y0 + (y1 - y0) * (renderTs - t0) / (t1 - t0);
+        this.rowId = getRowID(this.y);
+        this.colId = getColID(this.x);
       }
     }
   }
@@ -410,7 +448,7 @@ class BombState extends EntityState {
   }
 
   blocked(rowId, colId) {
-    return bind(rowId, colId) && boxMatrix[rowId][colId];
+    return bind(rowId, colId) && (boxMatrix[rowId][colId] || stoneMatrix[rowId][colId]);
   }
 
   doBomb() {
@@ -438,7 +476,7 @@ class BombState extends EntityState {
     for (var dir = 0; dir < directions.length; dir++) {
       var d = directions[dir];
       for (var i = d[1], j = d[2]; (d[0] ? i >= d[3] && j >= d[4] : i <= d[3] && j <= d[4]);) {
-        if (!bind(i, j)) {
+        if (!bind(i, j) || stoneMatrix[i][j]) {
           break;
         }
         if (boxMatrix[i][j]) {
@@ -470,10 +508,12 @@ class BombState extends EntityState {
 
   tryChain(rowId, colId) {
     var otherId = bombMatrix[rowId][colId];
-    if (bind(rowId, colId) && otherId) {
+    if (otherId && bind(rowId, colId)) {
       bombs[this.id].chain.push(otherId);
       bombs[otherId].chain.push(this.id);
+      return true;
     }
+    return false;
   }
 
   // 放置炸弹时, 尝试链接其他炸弹, 达到链爆效果
@@ -491,7 +531,9 @@ class BombState extends EntityState {
         if (!bind(i, j) || this.blocked(i, j)) {
           break;
         }
-        this.tryChain(i, j);
+        if (this.tryChain(i, j)) {
+          break;
+        }
         i += d[5];
         j += d[6];
       }
@@ -677,8 +719,9 @@ function clearMatrix(obj) {
   return matrix;
 }
 
-function init() {
+function init(whichMap) {
   boxMatrix = clearMatrix();
+  stoneMatrix = clearMatrix();
   bombMatrix = clearMatrix();
   lootMatrix = clearMatrix();
   waveMatrix = clearMatrix();
@@ -691,12 +734,15 @@ function init() {
     remove(boxes, i);
   }
 
+  var map = maps[whichMap];
   for (var i = 0; i < MAX_ROW; i++) {
     for (var j = 0; j < MAX_COL; j++) {
       if (map[i][j] == 1) {
         var id = getID();
         boxes[id] = new BoxState(id, j * UNIT_WIDTH, i * UNIT_HEIGHT);
         boxMatrix[i][j] = id;
+      } else if (map[i][j] == 2) {
+        stoneMatrix[i][j] = 1;
       } else {
         boxMatrix[i][j] = 0;
       }
@@ -743,12 +789,15 @@ function broadcastState() {
       waves: matrixToStringArray(waveMatrix, waves),
       boxes: matrixToIntArray(boxMatrix),
       loots: matrixToStringArray(lootMatrix, loots),
+      stones: matrixToIntArray(stoneMatrix),
     });
   }
 }
 
+var currentMap = 0;
 function restartGame() {
-  init();
+  currentMap = (currentMap + 1) % maps.length;
+  init(currentMap);
   numPlayers = 0;
   for (var spawn in playerSpawns) {
     playerSpawns[spawn].spawn = true;
@@ -773,7 +822,7 @@ function serverUpdate(delta, callback) {
   var shouldRestart = false;
   for (var id in players) {
     var player = players[id];
-    shouldRestart |= player.score >= 3;
+    shouldRestart |= player.score >= 10;
   }
 
   if (shouldRestart) {
