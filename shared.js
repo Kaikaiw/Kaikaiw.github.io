@@ -22,10 +22,10 @@ types = {
   },
   // 方向
   dir: {
-    up:                0,
-    right:             1,
-    down:              2,
-    left:              3
+    up:                1,
+    right:             2,
+    down:              3,
+    left:              4
   },
   // 键
   key: {
@@ -44,9 +44,9 @@ types = {
   },
   // 加强
   loot: {
-    speed:             0,
-    power:             1,
-    bombs:             2
+    speed:             1,
+    power:             2,
+    bombs:             3
   },
   // 操作代码
   opcode: {
@@ -266,7 +266,7 @@ class PlayerState extends EntityState {
     }
   }
 
-  move(delta, dir) {
+  move(delta, dir, isServer) {
     this.dir = dir;
     var toX = this.x;
     var toY = this.y;
@@ -295,14 +295,19 @@ class PlayerState extends EntityState {
         (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId])) {
       return;
     }
-    if (waveMatrix[toRowId][toColId]) {
-      this.downPlayer();
-    } 
 
     this.x = toX;
     this.y = toY;
     this.rowId = toRowId;
     this.colId = toColId;
+
+    if (!isServer) {
+      return;
+    }
+
+    if (waveMatrix[toRowId][toColId]) {
+      this.downPlayer();
+    } 
 
     for (var id in playerMatrix[this.rowId][this.colId]) {
       if (id == this.id) {
@@ -318,12 +323,14 @@ class PlayerState extends EntityState {
     if (lootId) {
       this.pickupLoot(loots[lootId].type);
       remove(loots, lootId, lootMatrix)
-
       clients[this.id].emit('opcode', {opcode: types.opcode.pickup_loot,});
     }
   }
 
   putBomb() {
+    if (this.downed) {
+      return;
+    }
     if (bombMatrix[this.rowId][this.colId] || boxMatrix[this.rowId][this.colId]) {
       return;
     }
@@ -336,7 +343,6 @@ class PlayerState extends EntityState {
     var id = getID();
     bombs[id] = new BombState(id, this.x, this.y, this.power, this.id);
     bombs[id].doChain();
-
   }
 
   update(delta) {
@@ -363,23 +369,23 @@ class PlayerState extends EntityState {
     }
   }
 
-  applyInput(input) {
+  applyInput(input, isServer) {
     this.ackSeqId = input.seqId;
     var key = input.key;
     var delta = input.delta;
 
     switch (key) {
     case types.key.up:
-      this.move(delta, types.dir.up);
+      this.move(delta, types.dir.up, isServer);
       break;
     case types.key.right:
-      this.move(delta, types.dir.right);
+      this.move(delta, types.dir.right, isServer);
       break;
     case types.key.down:
-      this.move(delta, types.dir.down);
+      this.move(delta, types.dir.down, isServer);
       break;
     case types.key.left:
-      this.move(delta, types.dir.left);
+      this.move(delta, types.dir.left, isServer);
       break;
     }
   }
@@ -511,6 +517,7 @@ class WaveState extends EntityState {
   constructor(id, rowId, colId, dir) {
     super(id, colId * UNIT_WIDTH, rowId * UNIT_HEIGHT);
     this.dir = dir;
+    this.type = dir;
     this.rowId = rowId;
     this.colId = colId;
     this.createTime = +new Date();
@@ -622,6 +629,38 @@ function intArrayToMatrix(array) {
   return matrix;
 }
 
+function matrixToStringArray(matrix, objects) {
+  var array = [];
+
+  for (var i = 0; i < MAX_ROW; i++) {
+    var rowMask = '';
+    for (var j = 0; j < MAX_COL; j++) {
+      if (matrix[i][j]) {
+        rowMask += objects[matrix[i][j]].type.toString();
+      } else {
+        rowMask += '0';
+      }
+    }
+    array.push(rowMask);
+  }
+
+  return array;
+}
+
+function stringArrayToMatrix(array) {
+  var matrix = {};
+
+  for (var i = 0; i < MAX_ROW; i++) {
+    matrix[i] = {};
+    for (var j = 0; j < MAX_COL; j++) {
+      matrix[i][j] = parseInt(array[i][j]);
+    }
+  }
+
+  return matrix;
+}
+
+
 function clearMatrix(obj) {
   matrix = new Array(MAX_ROW);
   for (var i = 0; i < MAX_ROW; i++) {
@@ -669,7 +708,7 @@ function handleClientMessage(msg, player) {
   switch (msg.opcode) {
   case types.opcode.move:
     msg.input.delta = 1000.0 / 60.0;
-    player.applyInput(msg.input);
+    player.applyInput(msg.input, true);
   break;
   case types.opcode.put_bomb:
     player.putBomb();
@@ -683,9 +722,9 @@ function broadcastState() {
       opcode: types.opcode.move,
       players: players,
       bombs: matrixToIntArray(bombMatrix),
-      waves: waves,
+      waves: matrixToStringArray(waveMatrix, waves),
       boxes: matrixToIntArray(boxMatrix),
-      loots: loots,
+      loots: matrixToStringArray(lootMatrix, loots),
     });
   }
 }
