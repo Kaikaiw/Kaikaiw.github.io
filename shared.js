@@ -357,7 +357,7 @@ class PlayerState extends EntityState {
     if (lootId) {
       this.pickupLoot(loots[lootId].type);
       remove(loots, lootId, lootMatrix)
-      clients[this.id].emit('opcode', {opcode: types.opcode.pickup_loot,});
+      clients[this.id].emit('opcode', {o: types.opcode.pickup_loot,});
     }
   }
 
@@ -751,15 +751,38 @@ function init(whichMap) {
 }
 
 function handleClientMessage(msg, player) {
-  switch (msg.opcode) {
+  switch (msg.o) {
   case types.opcode.move:
-    msg.input.delta = 1000.0 / 60.0;
-    player.applyInput(msg.input, true);
+    msg.i.delta = 1000.0 / 60.0;
+    player.applyInput(msg.i, true);
   break;
   case types.opcode.put_bomb:
     player.putBomb();
   break;
   }
+}
+
+function playerStateToInt(state) {
+  var ret = state.dir;
+  ret = ret << 4 | state.currentBombNumber;
+  ret = ret << 4 | state.maxBombNumber;
+  ret = ret << 1 | state.downed;
+  ret = ret << 4 | state.score;
+  return ret;
+}
+
+function intToPlayerState(state) {
+  var ret = {};
+  ret.score = state & 0b1111;
+  state >>= 4;
+  ret.downed = state & 0b1;
+  state >>= 1;
+  ret.maxBombNumber = state & 0b1111;
+  state >>= 4;
+  ret.currentBombNumber = state & 0b1111;
+  state >>= 4;
+  ret.dir = state;
+  return ret;
 }
 
 function broadcastState() {
@@ -768,28 +791,22 @@ function broadcastState() {
     var p = players[id];
     playerStates.push({
       id: id,
-      ackSeqId: p.ackSeqId,
+      aid: p.ackSeqId,
       x: p.x,
       y: p.y,
-      dir: p.dir,
-      speed: p.speed,
-      power: p.power,
-      currentBombNumber: p.currentBombNumber,
-      maxBombNumber: p.maxBombNumber,
-      downed: p.downed,
-      score: p.score,
+      sp: p.speed,
+      s: playerStateToInt(p),
     });
   }
 
   for (var id in players) {
     clients[id].volatile.emit('opcode', {
-      opcode: types.opcode.move,
-      players: playerStates,
-      bombs: matrixToIntArray(bombMatrix),
-      waves: matrixToStringArray(waveMatrix, waves),
-      boxes: matrixToIntArray(boxMatrix),
-      loots: matrixToStringArray(lootMatrix, loots),
-      stones: matrixToIntArray(stoneMatrix),
+      o: types.opcode.move,
+      p: playerStates,
+      bb: matrixToIntArray(bombMatrix),
+      w: matrixToStringArray(waveMatrix, waves),
+      b: matrixToIntArray(boxMatrix),
+      l: matrixToStringArray(lootMatrix, loots),
     });
   }
 }
@@ -908,7 +925,7 @@ function doSpawn(id) {
     break;
   }
 
-  clients[id].emit('opcode', {opcode: types.opcode.new_player, id: id,});
+  clients[id].emit('opcode', {o: types.opcode.new_player, id: id, m: currentMap});
 }
 
 function spawnPlayer(id, socket) {

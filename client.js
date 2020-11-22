@@ -283,13 +283,13 @@ class Player extends Entity {
     var shouldProcessSpace = !this.spacePressed && keyPressed[types.key.space];
     this.spacePressed = keyPressed[types.key.space];
     if (shouldProcessSpace && this.state.currentBombNumber < this.state.maxBombNumber) {
-      server.emit('opcode', {opcode: types.opcode.put_bomb,});
+      server.emit('opcode', {o: types.opcode.put_bomb,});
       Resource.playSnd(types.sound.put_bomb);
     }
 
     if (Object.keys(input).length && !shouldProcessSpace) {
       input.seqId = inputSeqId++;
-      server.volatile.emit('opcode', {opcode: types.opcode.move, input: input},);
+      server.volatile.emit('opcode', {o: types.opcode.move, i: input},);
       var localInput = Object.assign({}, input);
       localInput.delta = delta;
       this.applyInput(localInput);
@@ -375,30 +375,38 @@ function init() {
   server = socket;
 }
 
-function setPlayerPosition(player, x, y, dir) {
+function setPlayerPosition(player, x, y) {
   player.state.x = x;
   player.state.y = y;
-  player.state.dir = dir;
   player.state.rowId = getRowID(y);
   player.state.colId = getColID(x);
 }
 
 function handleMessage(msg) {
-  switch (msg.opcode) {
+  switch (msg.o) {
     case types.opcode.new_player:
       localPlayerId = msg.id;
+      var map = maps[msg.m];
+      for (var i = 0; i < MAX_ROW; i++) {
+        for (var j = 0; j < MAX_COL; j++) {
+          if (map[i][j] == 2) {
+            stoneMatrix[i][j] = 1;
+          }
+        }
+      }
     break;
     case types.opcode.move:
       for (var i in players) {
         var id = players[i].id;
-        if (!(id in msg.players)) {
+        if (!(id in msg.p)) {
           delete players[id];
         }
       }
 
-      for (var i in msg.players) {
-        var remotePlayer = msg.players[i];
-        var id = msg.players[i].id;
+      for (var i in msg.p) {
+        var remotePlayer = msg.p[i];
+        var subState = intToPlayerState(remotePlayer.s);
+        var id = msg.p[i].id;
         if (!(id in players)) { // 创建玩家
           players[id] = new Player(
             id, remotePlayer.x, remotePlayer.y, UNIT_WIDTH, UNIT_HEIGHT);
@@ -407,39 +415,38 @@ function handleMessage(msg) {
         var player = players[id];
 
         if (id === localPlayerId) {
-          setPlayerPosition(player, remotePlayer.x, remotePlayer.y, remotePlayer.dir);
+          setPlayerPosition(player, remotePlayer.x, remotePlayer.y);
 
           while (!pendingInputs.empty()) {
             var pendingInput = pendingInputs.peek();
-            if (pendingInput.seqId <= remotePlayer.ackSeqId) {
+            if (pendingInput.seqId <= remotePlayer.aid) {
               pendingInputs.shift();
             } else {
               break;
             }
           }
 
-          player.state.speed = remotePlayer.speed;
+          player.state.speed = remotePlayer.sp;
           pendingInputs.iterate((pendingInput) => {
             player.applyInput(pendingInput);
           });
         } else {
-          player.state.dir = remotePlayer.dir;
+          player.state.dir = subState.dir;
           player.state.buffer.push({'ts': +new Date(), 'x': remotePlayer.x, 'y': remotePlayer.y,});
         }
 
-        player.state.score = remotePlayer.score;
-        player.state.power = remotePlayer.power;
-        player.state.currentBombNumber = remotePlayer.currentBombNumber;
-        player.state.maxBombNumber = remotePlayer.maxBombNumber;
+        player.state.score = subState.score;
+        player.state.currentBombNumber = subState.currentBombNumber;
+        player.state.maxBombNumber = subState.maxBombNumber;
 
-        if (!player.state.downed && remotePlayer.downed) {
+        if (!player.state.downed && subState.downed) {
           player.downPlayer();
-        } if (player.state.downed && !remotePlayer.downed) {
+        } if (player.state.downed && !subState.downed) {
           player.revivePlayer();
         }
       }
 
-      var newBombMatrix = intArrayToMatrix(msg.bombs);
+      var newBombMatrix = intArrayToMatrix(msg.bb);
       var bombed = false;
       for (var i = 0; i < MAX_ROW; i++) {
         for (var j = 0; j < MAX_COL; j++) {
@@ -452,10 +459,9 @@ function handleMessage(msg) {
       if (bombed) {
         Resource.playSnd(types.sound.explode);
       }
-      waveMatrix = stringArrayToMatrix(msg.waves);
-      boxMatrix = intArrayToMatrix(msg.boxes);
-      lootMatrix = stringArrayToMatrix(msg.loots);
-      stoneMatrix = intArrayToMatrix(msg.stones);
+      waveMatrix = stringArrayToMatrix(msg.w);
+      boxMatrix = intArrayToMatrix(msg.b);
+      lootMatrix = stringArrayToMatrix(msg.l);
     break;
     case types.opcode.pickup_loot:
       Resource.playSnd(types.sound.pickup_loot);
