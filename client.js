@@ -509,7 +509,7 @@ function render(delta) {
         bomb.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
       }
       if (lootMatrix[i][j]) {
-        loot.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, lootMatrix[i][j] * loot.sprite.sizeX, 0);
+        loot.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, (lootMatrix[i][j] - 1) * loot.sprite.sizeX, 0);
       }
       for (var playerId in playerMatrix[i][j]) {
         playersToRender.push(playerId);
