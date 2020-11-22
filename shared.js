@@ -927,10 +927,9 @@ function doSpawn(id) {
     spawnedPlayers[id] = i;
     spawn.spawn = false;
     numPlayers++;
+    clients[id].emit('opcode', {o: types.opcode.new_player, id: id, m: currentMap});
     break;
   }
-
-  clients[id].emit('opcode', {o: types.opcode.new_player, id: id, m: currentMap});
 }
 
 function spawnPlayer(id, socket) {

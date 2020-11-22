@@ -244,7 +244,7 @@ class Player extends Entity {
   downPlayer() {
     this.state.downPlayer();
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.player_downed, 74, 83, 74, 83);
+    this.sprite = new Sprite(types.entity.player_downed, 75, 82, 75, 82);
     this.sprite.cycleTime = 200;
     this.sprite.maxCycle = 4;
   }
@@ -567,13 +567,13 @@ Resource.loadSnds([ // [类型ID, 文件, 音量, 是否循环]
 ]);
 
 Resource.loadPngs([ // [类型ID, 文件]
-  [       types.entity.player,   'remi.png'],
+  [       types.entity.player,   'char1.png'],
   [         types.entity.bomb,   'bomb.png'],
   [         types.entity.wave,   'wave.png'],
   [        types.entity.block,  'block.png'],
   [        types.entity.stone,  'stone.png'],
   [          types.entity.box,    'box.png'],
   [         types.entity.loot,   'loot.png'],
-  [types.entity.player_downed,   'netu.png']],
+  [types.entity.player_downed,   'down.png']],
   init
 );
