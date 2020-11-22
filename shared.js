@@ -65,7 +65,7 @@ types = {
 // =============================================================================
 URL = '0.0.0.0:';
 FRAME_RATE = 45;
-SERVER_FRAME = 5;
+SERVER_FRAME = 10;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131071;
 MAX_QUEUE_SIZE = 1023;
@@ -270,7 +270,7 @@ class PlayerState extends EntityState {
     this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
-    this.msgQueue = new Queue(100);
+    this.msgQueue = new Queue(50);
   }
 
   downPlayer() {
@@ -835,8 +835,7 @@ function serverUpdate(delta, callback) {
     var player = players[id];
     var queue = player.msgQueue;
     var ctr = 0;
-    console.log(queue.length());
-    while (ctr < 10 && !queue.empty()) {
+    while (ctr < 5 && !queue.empty()) {
       ctr++;
       callback(queue.shift(), player);
     }
