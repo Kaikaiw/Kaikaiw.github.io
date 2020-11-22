@@ -374,17 +374,19 @@ function handleMessage(msg) {
       localPlayerId = msg.id;
     break;
     case types.opcode.move:
-      for (var id in players) {
+      for (var i in players) {
+        var id = players[i].id;
         if (!(id in msg.players)) {
           delete players[id];
         }
       }
 
-      for (var id in msg.players) {
-        var remotePlayer = msg.players[id];
+      for (var i in msg.players) {
+        var remotePlayer = msg.players[i];
+        var id = msg.players[i].id;
         if (!(id in players)) { // 创建玩家
           players[id] = new Player(
-            id, remotePlayer.x, remotePlayer.y, remotePlayer.sizeX, remotePlayer.sizeY);
+            id, remotePlayer.x, remotePlayer.y, UNIT_WIDTH, UNIT_HEIGHT);
         }
 
         var player = players[id];

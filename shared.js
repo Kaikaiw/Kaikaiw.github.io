@@ -717,10 +717,28 @@ function handleClientMessage(msg, player) {
 }
 
 function broadcastState() {
+  var playerStates = [];
+  for (var id in players) {
+    var p = players[id];
+    playerStates.push({
+      id: id,
+      ackSeqId: p.ackSeqId,
+      x: p.x,
+      y: p.y,
+      dir: p.dir,
+      speed: p.speed,
+      power: p.power,
+      currentBombNumber: p.currentBombNumber,
+      maxBombNumber: p.maxBombNumber,
+      downed: p.downed,
+      score: p.score,
+    });
+  }
+
   for (var id in players) {
     clients[id].volatile.emit('opcode', {
       opcode: types.opcode.move,
-      players: players,
+      players: playerStates,
       bombs: matrixToIntArray(bombMatrix),
       waves: matrixToStringArray(waveMatrix, waves),
       boxes: matrixToIntArray(boxMatrix),
