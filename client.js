@@ -484,6 +484,7 @@ function initGame() {
     tick(delta, () => { return false; }, handleMessage);
     render(delta);
     bomb.update(delta);
+    wave.update(delta);
   }, delta);
 }
 
