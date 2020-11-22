@@ -499,7 +499,7 @@ function render(delta) {
         box.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
       }
       if (waveMatrix[i][j]) {
-        wave.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, 0, ((waveMatrix[i][j] + 1) % 4) * wave.sprite.sizeY);
+        wave.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, 0, (waveMatrix[i][j] % 4) * wave.sprite.sizeY);
       }
       if (bombMatrix[i][j]) {
         bomb.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
