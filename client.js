@@ -398,9 +398,12 @@ function handleMessage(msg) {
       }
     break;
     case types.opcode.move:
-      for (var i in players) {
-        var id = players[i].id;
-        if (!(id in msg.p)) {
+      for (var id in players) {
+        var inRemote = false;
+        for (var j in msg.p) {
+          inRemote |= id == msg.p[j].id;
+        }
+        if (!inRemote) {
           delete players[id];
         }
       }
