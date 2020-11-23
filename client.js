@@ -330,7 +330,7 @@ class Wave extends Entity {
     super();
     // 魔法数字...
     this.sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
-    this.sprite.cycleTime = 250;
+    this.sprite.cycleTime = 300;
     this.sprite.maxCycle = 2;
     this.state = new EntityState(id, 0, 0);
   }
