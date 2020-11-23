@@ -377,17 +377,63 @@ class Bomb extends Entity {
 //  爆波
 // =============================================================================
 class Wave extends Entity {
-  constructor(id, rowId, colId, dir) {
+  constructor(id, rowId, colId, dir, len) {
     super();
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
-    this.sprite.cycleTime = 300;
-    this.sprite.maxCycle = 2;
     this.state = new EntityState(id, 0, 0);
+    this.id = id;
+    this.rowId = rowId;
+    this.colId = colId;
+    this.dir = dir;
+    this.len = len;
+    this.sprites = [];
+    this.createTime = +new Date();
+    this.ttl = 500;
+
+    var sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
+    sprite.cycleTime = 40;
+    sprite.maxCycle = 2;
+    sprite.i = rowId;
+    sprite.j = colId;
+    this.sprites.push(sprite);
+
+    var directions = [ // [[step_i, step_j]]
+      [-1,  0],
+      [ 0,  1],
+      [ 1,  0],
+      [ 0, -1],
+    ];
+    this.direction = directions[dir - 1];
   }
 
   update(delta) {
-    this.sprite.update(delta);
+    var n = this.sprites.length;
+    if (n < this.len) {
+      var sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
+      sprite.cycleTime = 40;
+      sprite.maxCycle = 2;
+      var previous = this.sprites[n - 1];
+      sprite.i = previous.i + this.direction[0];
+      sprite.j = previous.j + this.direction[1];
+      this.sprites.push(sprite);
+    }
+
+    for (var i in this.sprites) {
+      this.sprites[i].update(delta);
+    }
+
+    var nowTs = +new Date();
+    if (this.createTime + this.ttl < nowTs) {
+      delete wavesClient[this.id];
+    }
+  }
+
+  render(delta) {
+    for (var i in this.sprites) {
+      var s = this.sprites[i];
+      s.renderWith(
+        delta, s.j * UNIT_WIDTH, s.i * UNIT_HEIGHT, undefined, (this.dir % 4) * s.sizeY);
+    }
   }
 }
 
@@ -531,7 +577,15 @@ function handleMessage(msg) {
       if (bombed) {
         Resource.playSnd(types.sound.explode);
       }
-      waveMatrix = stringArrayToMatrix(msg.w);
+
+      var waveNumber = Object.keys(wavesClient).length;
+      for (var i in msg.w) {
+        var remoteWave = msg.w[i];
+        var subState = intToWaveState(remoteWave.s);
+        wavesClient[waveNumber] = new Wave(
+          waveNumber++, subState.rowId, subState.colId, subState.dir, subState.len);
+      }
+
       boxMatrix = bbMatrix[0];
       lootMatrix = stringArrayToMatrix(msg.l);
     break;
@@ -547,7 +601,6 @@ var stone = new Stone(0, 0);
 var box = new Box(0, -1, -1);
 var bomb = new Bomb(0, -1, -1);
 var loot = new Loot(0, -1, -1, 0);
-var wave = new Wave(0, -1, -1, 0);
 
 function initGame() {
   var canvas = document.getElementById('canvas');
@@ -579,7 +632,6 @@ function initGame() {
     tick(delta, () => { return false; }, handleMessage);
     render(delta);
     bomb.update(delta);
-    wave.update(delta);
   }, delta);
 }
 
@@ -588,6 +640,10 @@ function render(delta) {
     for (var j = 0; j < MAX_COL; j++) {
       block.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, blockMatrix[i][j] * block.sprite.sizeX, 0);
     }
+  }
+
+  for (var i in wavesClient) {
+    wavesClient[i].render(delta);
   }
 
   for (var i = 0; i < MAX_ROW; i++) {
@@ -607,9 +663,6 @@ function render(delta) {
       }
       if (stoneMatrix[i][j]) {
         stone.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
-      }
-      if (waveMatrix[i][j]) {
-        wave.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, undefined, (waveMatrix[i][j] % 4) * wave.sprite.sizeY);
       }
       if (lootMatrix[i][j]) {
         loot.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, (lootMatrix[i][j] - 1) * loot.sprite.sizeX, 0);

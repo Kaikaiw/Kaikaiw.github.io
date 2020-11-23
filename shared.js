@@ -473,11 +473,6 @@ class BombState extends EntityState {
       }
     }
 
-    // 中
-    var id = getID();
-    waves[id] = new WaveState(id, this.rowId, this.colId, types.dir.up);
-    waveMatrix[this.rowId][this.colId] = id;
-
     var directions = [ // [direction, start_i, start_j, end_i, end_j, step_i, step_j, dir_type]
       [0, this.rowId + 1, this.colId, this.rowId + this.power, this.colId + this.power,  1,  0, types.dir.down],
       [1, this.rowId - 1, this.colId, this.rowId - this.power, this.colId - this.power, -1,  0, types.dir.up],
@@ -487,6 +482,8 @@ class BombState extends EntityState {
 
     for (var dir = 0; dir < directions.length; dir++) {
       var d = directions[dir];
+      var len = 0;
+
       for (var i = d[1], j = d[2]; (d[0] ? i >= d[3] && j >= d[4] : i <= d[3] && j <= d[4]);) {
         if (!bind(i, j) || stoneMatrix[i][j]) {
           break;
@@ -496,11 +493,29 @@ class BombState extends EntityState {
           boxes[id].destroyBox();
           break;
         }
-        var id = getID();
-        waves[id] = new WaveState(id, i, j, d[7]);
-        waveMatrix[i][j] = id;
+
+        var lootId = lootMatrix[i][j];
+        if (lootId) {
+          remove(loots, lootId, lootMatrix);
+        }
+
+        var playerIds = Object.keys(playerMatrix[i][j]);
+        if (playerIds.length) {
+          for (var id in playerIds) {
+            players[playerIds[id]].downPlayer();
+          }
+        }
+
+        waveMatrix[i][j]++;
         i += d[5];
         j += d[6];
+        len++;
+      }
+
+      if (len) {
+        var id = getID();
+        waves[id] = new WaveState(id, d[1], d[2], d[7], len);
+        wavesToBroadcast.push(id);
       }
     }
   }
@@ -568,37 +583,43 @@ var bombMatrix;
 //  爆波
 // =============================================================================
 class WaveState extends EntityState {
-  constructor(id, rowId, colId, dir) {
+  constructor(id, rowId, colId, dir, len) {
     super(id, colId * UNIT_WIDTH, rowId * UNIT_HEIGHT);
     this.dir = dir;
     this.type = dir;
     this.rowId = rowId;
     this.colId = colId;
+    this.len = len;
     this.createTime = +new Date();
-    this.ttl = 400 // 1秒
-
-    var lootId = lootMatrix[this.rowId][this.colId];
-    if (lootId) {
-      remove(loots, lootId, lootMatrix);
-    }
-
-    var playerIds = Object.keys(playerMatrix[this.rowId][this.colId]);
-    if (playerIds.length) {
-      for (var i in playerIds) {
-        players[playerIds[i]].downPlayer();
-      }
-    }
+    this.ttl = 500 // 0.5秒
   }
 
   update(delta) {
     var nowTs = +new Date();
     if (this.createTime + this.ttl < nowTs) {
-      remove(waves, this.id, waveMatrix);
+      remove(waves, this.id);
+
+      var directions = [ // [[end_i, end_j, step_i, step_j]]
+        [1, this.rowId - this.len, this.colId - this.len, -1,  0],
+        [0, this.rowId + this.len, this.colId + this.len,  0,  1],
+        [0, this.rowId + this.len, this.colId + this.len,  1,  0],
+        [1, this.rowId - this.len, this.colId - this.len,  0, -1],
+      ];
+
+      var d = directions[this.dir - 1];
+      for (var i = this.rowId, j = this.colId; (d[0] ? i > d[1] && j > d[2] : i < d[1] && j < d[2]);) {
+        waveMatrix[i][j]--;
+        i += d[3];
+        j += d[4];
+      }
+
       return;
     }
   }
 }
 waves = {};
+wavesToBroadcast = [];
+wavesClient = {};
 var waveMatrix;
 
 // =============================================================================
@@ -810,6 +831,23 @@ function intToPlayerState(state) {
   return ret;
 }
 
+function waveStateToInt(state) {
+  var ret = state.rowId;
+  ret = ret << 4 | state.colId;
+  ret = ret << 3 | state.dir;
+  ret = ret << 4 | state.len;
+  return ret;
+}
+
+function intToWaveState(state) {
+  var ret = {};
+  ret.len = state & 0b1111; state >>= 4;
+  ret.dir = state & 0b111; state >>= 3;
+  ret.colId = state & 0b1111; state >>= 4;
+  ret.rowId = state;
+  return ret;
+}
+
 function broadcastState() {
   var playerStates = [];
   for (var id in players) {
@@ -821,12 +859,21 @@ function broadcastState() {
     });
   }
 
+  var waveStates = [];
+  for (var id in wavesToBroadcast) {
+    var w = waves[wavesToBroadcast[id]];
+    waveStates.push({
+      s: waveStateToInt(w),
+    });
+  }
+  wavesToBroadcast = [];
+
   for (var id in players) {
     clients[id].volatile.emit('opcode', {
       o: types.opcode.move,
       p: playerStates,
       bb: matrixToIntArray(bombMatrix, boxMatrix),
-      w: matrixToStringArray(waveMatrix, waves),
+      w: waveStates,
       l: matrixToStringArray(lootMatrix, loots),
     });
   }
@@ -927,6 +974,7 @@ function update(delta, serverUpdateCallback, callback) {
 
   // 更新玩家
   for (var i in players) { players[i].update(delta); }
+  for (var i in wavesClient) { wavesClient[i].update(delta); }
 }
 
 function tick(delta, serverUpdateCallback, callback) {
