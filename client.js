@@ -229,11 +229,11 @@ loots = {};
 //  玩家
 // =============================================================================
 class Player extends Entity {
-  constructor(id, x, y, sizeX, sizeY) {
+  constructor(id, x, y, sizeX, sizeY, playerNum) {
     super();
-    this.state = new PlayerState(id, x, y, sizeX, sizeY);
+    this.state = new PlayerState(id, x, y, sizeX, sizeY, playerNum);
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.player, 96, 118, 96, 118);
+    this.sprite = new Sprite(playerNumToType[playerNum], 96, 118, 96, 118);
     this.sprite.maxCycle = 4;
     this.sprite.frameVector = [0,1,2,0,3];
     this.sprite.cycleTime = 170; // ms
@@ -251,7 +251,7 @@ class Player extends Entity {
 
   revivePlayer() {
     this.state.revivePlayer();
-    this.sprite = new Sprite(types.entity.player, 96, 118, 96, 118);
+    this.sprite = new Sprite(playerNumToType[this.state.playerNum], 96, 118, 96, 118);
     this.sprite.frameVector = [0,1,2,0,3];
     this.sprite.cycleTime = 170; // ms
     this.sprite.maxCycle = 4;
@@ -298,6 +298,12 @@ class Player extends Entity {
   }
 }
 localPlayerId = '';
+playerNumToType = [
+  types.entity.player,
+  types.entity.player2,
+  types.entity.player3,
+  types.entity.player4,
+];
 
 // =============================================================================
 //  炸弹
@@ -414,7 +420,7 @@ function handleMessage(msg) {
         var id = remotePlayer.id;
         if (!(id in players)) { // 创建玩家
           players[id] = new Player(
-            id, subState.x, subState.y, UNIT_WIDTH, UNIT_HEIGHT);
+            id, subState.x, subState.y, UNIT_WIDTH, UNIT_HEIGHT, subState.playerNum);
         }
 
         var player = players[id];
@@ -571,7 +577,8 @@ Resource.loadSnds([ // [类型ID, 文件, 音量, 是否循环]
 ]);
 
 Resource.loadPngs([ // [类型ID, 文件]
-  [       types.entity.player,   'char1.png'],
+  [       types.entity.player,  'char1.png'],
+  [       types.entity.player2, 'char2.png'],
   [         types.entity.bomb,   'bomb.png'],
   [         types.entity.wave,   'wave.png'],
   [        types.entity.block,  'block.png'],

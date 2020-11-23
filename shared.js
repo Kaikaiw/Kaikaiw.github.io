@@ -11,15 +11,17 @@ if (typeof exports === 'undefined') {
 types = {
   // 实体
   entity: {
-    player:            1,
-    player_tmp:        2,
-    bomb:              3,
-    wave:              4,
-    block:             5,
-    box:               6,
-    loot:              7,
-    player_downed:     8,
-    stone:             9
+    player:            0,
+    player2:           1,
+    player3:           2,
+    player4:           3,
+    bomb:              4,
+    wave:              5,
+    block:             6,
+    box:               7,
+    loot:              8,
+    player_downed:     9,
+    stone:            10 
   },
   // 方向
   dir: {
@@ -256,7 +258,7 @@ var stoneMatrix;
 //  玩家核心
 // =============================================================================
 class PlayerState extends EntityState {
-  constructor(id, x, y, sizeX, sizeY){
+  constructor(id, x, y, sizeX, sizeY, playerNum){
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
     this.stackedSpeed = 0;
@@ -271,6 +273,7 @@ class PlayerState extends EntityState {
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
     this.msgQueue = new Queue(50);
+    this.playerNum = playerNum;
   }
 
   downPlayer() {
@@ -775,6 +778,7 @@ function playerStateToInt(state) {
   r1 = r1 << 4 | state.maxBombNumber;
   r1 = r1 << 1 | state.downed;
   r1 = r1 << 4 | state.score;
+  r1 = r1 << 2 | state.playerNum;
 
   var r2 = state.x;
   r2 = r2 << 10 | state.y;
@@ -791,6 +795,7 @@ function intToPlayerState(state) {
   ret.y = s2 & 0b1111111111; s2 >>= 10;
   ret.x = s2;
 
+  ret.playerNum = s1 & 0b11; s1 >>= 2;
   ret.score = s1 & 0b1111; s1 >>= 4;
   ret.downed = s1 & 0b1; s1 >>= 1;
   ret.maxBombNumber = s1 & 0b1111; s1 >>= 4;
@@ -931,7 +936,7 @@ function doSpawn(id) {
     }
     var spawnX = spawn.where[0];
     var spawnY = spawn.where[1];
-    players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT);
+    players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT, i);
     spawnedPlayers[id] = i;
     spawn.spawn = false;
     numPlayers++;
