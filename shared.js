@@ -64,7 +64,7 @@ types = {
 //  全局配置 / 坐标转换
 // =============================================================================
 URL = '0.0.0.0:';
-FRAME_RATE = 45;
+FRAME_RATE = 50;
 SERVER_FRAME = 10;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131071;
@@ -642,15 +642,16 @@ function releaseID(id) {
   idQueue.push(id);
 }
 
-function matrixToIntArray(matrix) {
+function matrixToIntArray(m1, m2) {
   var array = [];
 
   for (var i = 0; i < MAX_ROW; i++) {
     var rowMask = 0;
     for (var j = 0; j < MAX_COL; j++) {
-      if (matrix[i][j]) {
-        rowMask |= 1 << j;
-      }
+      rowMask |= (m1[i][j] > 0) << j;
+    }
+    for (var j = 0; j < MAX_COL; j++) {
+      rowMask |= (m2[i][j] > 0) << MAX_COL + j;
     }
     array.push(rowMask);
   }
@@ -659,18 +660,21 @@ function matrixToIntArray(matrix) {
 }
 
 function intArrayToMatrix(array) {
-  var matrix = {};
+  var m1 = {};
+  var m2 = {};
 
   for (var i = 0; i < MAX_ROW; i++) {
-    matrix[i] = {};
+    m2[i] = {};
     for (var j = 0; j < MAX_COL; j++) {
-      if (array[i] & 1 << j) {
-        matrix[i][j] = 1;
-      }
+      m2[i][j] = array[i] >> j & 1;
+    }
+    m1[i] = {};
+    for (var j = 0; j < MAX_COL; j++) {
+      m1[i][j] = array[i] >> j + MAX_COL & 1;
     }
   }
 
-  return matrix;
+  return [m1, m2];
 }
 
 function matrixToStringArray(matrix, objects) {
@@ -805,9 +809,8 @@ function broadcastState() {
     clients[id].volatile.emit('opcode', {
       o: types.opcode.move,
       p: playerStates,
-      bb: matrixToIntArray(bombMatrix),
+      bb: matrixToIntArray(bombMatrix, boxMatrix),
       w: matrixToStringArray(waveMatrix, waves),
-      b: matrixToIntArray(boxMatrix),
       l: matrixToStringArray(lootMatrix, loots),
     });
   }

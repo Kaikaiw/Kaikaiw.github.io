@@ -448,7 +448,8 @@ function handleMessage(msg) {
         }
       }
 
-      var newBombMatrix = intArrayToMatrix(msg.bb);
+      var bbMatrix = intArrayToMatrix(msg.bb);
+      var newBombMatrix = bbMatrix[1];
       var bombed = false;
       for (var i = 0; i < MAX_ROW; i++) {
         for (var j = 0; j < MAX_COL; j++) {
@@ -462,7 +463,7 @@ function handleMessage(msg) {
         Resource.playSnd(types.sound.explode);
       }
       waveMatrix = stringArrayToMatrix(msg.w);
-      boxMatrix = intArrayToMatrix(msg.b);
+      boxMatrix = bbMatrix[0];
       lootMatrix = stringArrayToMatrix(msg.l);
     break;
     case types.opcode.pickup_loot:
