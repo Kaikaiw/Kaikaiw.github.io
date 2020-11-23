@@ -867,7 +867,7 @@ function serverUpdate(delta, callback) {
 
     if (player.downed) {
       player.downedFrame++;
-      if (player.downedFrame == 50) { // 5秒
+      if (player.downedFrame == SERVER_FRAME * 5) { // 5秒
         player.revivePlayer();
       }
     }
