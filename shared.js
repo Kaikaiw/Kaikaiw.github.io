@@ -280,7 +280,7 @@ class PlayerState extends EntityState {
     if (!this.downed) {
       this.downed = true;
       this.stackedSpeed = this.speed;
-      this.speed = 0.01;
+      this.speed = 1;
     }
   }
 
