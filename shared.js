@@ -261,6 +261,7 @@ class PlayerState extends EntityState {
   constructor(id, x, y, sizeX, sizeY, playerNum){
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
+    this.downedFrame = 0;
     this.stackedSpeed = 0;
     this.speed = 15;
     this.maxSpeed = 30;
@@ -279,6 +280,7 @@ class PlayerState extends EntityState {
   downPlayer() {
     if (!this.downed) {
       this.downed = true;
+      this.downedFrame = 0;
       this.stackedSpeed = this.speed;
       this.speed = 1;
     }
@@ -858,6 +860,13 @@ function serverUpdate(delta, callback) {
   for (var id in players) {
     var player = players[id];
     shouldRestart |= player.score >= 5;
+
+    if (player.downed) {
+      player.downedFrame++;
+      if (player.downedFrame == 50) { // 5秒
+        player.revivePlayer();
+      }
+    }
   }
 
   if (shouldRestart) {
