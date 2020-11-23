@@ -291,7 +291,7 @@ class PlayerState extends EntityState {
   pickupLoot(type) {
     switch(type) {
       case types.loot.speed:
-        this.speed = Math.min(this.maxSpeed, this.speed + 4);
+        this.speed = Math.min(this.maxSpeed, this.speed + 3);
       break;
       case types.loot.power:
         this.power = Math.min(this.maxPower, this.power + 1);
