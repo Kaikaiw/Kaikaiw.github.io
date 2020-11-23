@@ -120,6 +120,42 @@ class Sprite {
     );
   }
 
+  renderBottom(delta, positionX, positionY) {
+    ctx.drawImage(
+      Resource.getPng(this.type),
+      // 图片起画点
+      this.startX,
+      this.startY + this.sizeY * 3 / 5,
+      // 大小
+      this.sizeX,
+      this.sizeY * 2 / 5,
+      // 画哪
+      positionX - (this.sizeDrawX - UNIT_WIDTH) / 2,
+      positionY - (this.sizeDrawY - UNIT_HEIGHT) + this.sizeDrawY * 3 / 5,
+      // 实际大小
+      this.sizeDrawX,
+      this.sizeDrawY * 2 / 5,
+    );
+  }
+
+  renderTop(delta, positionX, positionY) {
+    ctx.drawImage(
+      Resource.getPng(this.type),
+      // 图片起画点
+      this.startX,
+      this.startY,
+      // 大小
+      this.sizeX,
+      this.sizeY * 3 / 5,
+      // 画哪
+      positionX - (this.sizeDrawX - UNIT_WIDTH) / 2,
+      positionY - (this.sizeDrawY - UNIT_HEIGHT),
+      // 实际大小
+      this.sizeDrawX,
+      this.sizeDrawY * 3 / 5,
+    );
+  }
+
   updateDir(dir) {
     if (this.frameVector.length) {
       this.startY = this.sizeY * this.frameVector[dir];
@@ -244,7 +280,7 @@ class Player extends Entity {
   downPlayer() {
     this.state.downPlayer();
     // 魔法数字...
-    this.sprite = new Sprite(types.entity.player_downed, 75, 82, 75, 82);
+    this.sprite = new Sprite(types.entity.player_downed, 75, 82, 96, 118);
     this.sprite.cycleTime = 200;
     this.sprite.maxCycle = 4;
   }
@@ -295,6 +331,14 @@ class Player extends Entity {
       this.applyInput(localInput);
       pendingInputs.push(localInput);
     }
+  }
+
+  renderBottom(delta) {
+    this.sprite.renderBottom(delta, this.state.x, this.state.y);
+  }
+
+  renderTop(delta) {
+    this.sprite.renderTop(delta, this.state.x, this.state.y);
   }
 }
 localPlayerId = '';
@@ -534,6 +578,15 @@ function render(delta) {
   for (var i = 0; i < MAX_ROW; i++) {
     var playersToRender = [];
     for (var j = 0; j < MAX_COL; j++) {
+      if (bombMatrix[i][j]) {
+        bomb.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
+      }
+      for (var playerId in playerMatrix[i][j]) {
+        players[playerId].renderBottom(delta);
+        playersToRender.push(playerId);
+      }
+    }
+    for (var j = 0; j < MAX_COL; j++) {
       if (boxMatrix[i][j]) {
         box.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
       }
@@ -543,19 +596,13 @@ function render(delta) {
       if (waveMatrix[i][j]) {
         wave.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, undefined, (waveMatrix[i][j] % 4) * wave.sprite.sizeY);
       }
-      if (bombMatrix[i][j]) {
-        bomb.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
-      }
       if (lootMatrix[i][j]) {
         loot.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, (lootMatrix[i][j] - 1) * loot.sprite.sizeX, 0);
-      }
-      for (var playerId in playerMatrix[i][j]) {
-        playersToRender.push(playerId);
       }
     }
 
     for (var id in playersToRender) {
-      players[playersToRender[id]].render(delta);
+      players[playersToRender[id]].renderTop(delta);
     }
   }
 

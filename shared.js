@@ -296,7 +296,7 @@ class PlayerState extends EntityState {
   pickupLoot(type) {
     switch(type) {
       case types.loot.speed:
-        this.speed = Math.min(this.maxSpeed, this.speed + 3);
+        this.speed = Math.min(this.maxSpeed, this.speed + 2);
       break;
       case types.loot.power:
         this.power = Math.min(this.maxPower, this.power + 1);
@@ -327,6 +327,8 @@ class PlayerState extends EntityState {
       toX = Math.max(0, this.x - diff);
       break;
     }
+    toX = Math.round(toX);
+    toY = Math.round(toY);
 
     var toColId = getColID(toX);
     var toRowId = getRowID(toY);
@@ -338,8 +340,8 @@ class PlayerState extends EntityState {
       return;
     }
 
-    this.x = Math.round(toX);
-    this.y = Math.round(toY);
+    this.x = toX;
+    this.y = toY;
     this.rowId = toRowId;
     this.colId = toColId;
 
