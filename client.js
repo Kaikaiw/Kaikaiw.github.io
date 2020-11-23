@@ -389,9 +389,10 @@ class Wave extends Entity {
     this.sprites = [];
     this.createTime = +new Date();
     this.ttl = 500;
+    this.spreadTime = 40;
 
     var sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
-    sprite.cycleTime = 40;
+    sprite.cycleTime = 400;
     sprite.maxCycle = 2;
     sprite.i = rowId;
     sprite.j = colId;
@@ -407,22 +408,24 @@ class Wave extends Entity {
   }
 
   update(delta) {
-    var n = this.sprites.length;
-    if (n < this.len) {
-      var sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
-      sprite.cycleTime = 40;
-      sprite.maxCycle = 2;
-      var previous = this.sprites[n - 1];
-      sprite.i = previous.i + this.direction[0];
-      sprite.j = previous.j + this.direction[1];
-      this.sprites.push(sprite);
+    var nowTs = +new Date();
+    if (this.createTime + this.spreadTime < nowTs) {
+      var n = this.sprites.length;
+      if (n < this.len) {
+        var sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
+        sprite.cycleTime = 400;
+        sprite.maxCycle = 2;
+        var previous = this.sprites[n - 1];
+        sprite.i = previous.i + this.direction[0];
+        sprite.j = previous.j + this.direction[1];
+        this.sprites.push(sprite);
+      }
     }
 
     for (var i in this.sprites) {
       this.sprites[i].update(delta);
     }
 
-    var nowTs = +new Date();
     if (this.createTime + this.ttl < nowTs) {
       delete wavesClient[this.id];
     }
