@@ -40,10 +40,12 @@ types = {
   },
   // 声
   sound: {
-    bgm:               0,
+    ship:              0,
     put_bomb:          1,
     explode:           2,
-    pickup_loot:       3
+    pickup_loot:       3,
+    resident:          4,
+    x:                 5
   },
   // 加强
   loot: {
@@ -772,6 +774,7 @@ function handleClientMessage(msg, player) {
   break;
   case types.opcode.put_bomb:
     player.putBomb();
+    restartGame();
   break;
   }
 }

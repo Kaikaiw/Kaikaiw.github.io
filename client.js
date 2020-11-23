@@ -62,6 +62,11 @@ Resource.playSnd = function(key) {
   }
 };
 
+Resource.pauseSnd = function(key) {
+  Resource.sndMap[key].pause();
+  Resource.sndMap[key].currentTime = 0;
+}
+
 // =============================================================================
 //  素像
 // =============================================================================
@@ -399,6 +404,11 @@ validKeys[types.key.left] = 1;
 validKeys[types.key.space] = 1;
 keyPressed = {};
 var server;
+mapToBGM = [
+  types.sound.ship,
+  types.sound.x,
+  types.sound.resident,
+]
 
 function init() {
   // 玩家输入
@@ -432,6 +442,7 @@ function setPlayerPosition(player, x, y) {
   player.state.colId = getColID(x);
 }
 
+var currentMap = 0;
 function handleMessage(msg) {
   switch (msg.o) {
     case types.opcode.new_player:
@@ -446,6 +457,9 @@ function handleMessage(msg) {
           }
         }
       }
+      Resource.pauseSnd(mapToBGM[currentMap]);
+      Resource.playSnd(mapToBGM[msg.m]);
+      currentMap = msg.m;
     break;
     case types.opcode.move:
       for (var id in players) {
@@ -557,7 +571,6 @@ function initGame() {
   playerMatrix = clearMatrix({});
 
   // 开始游戏
-  Resource.playSnd(types.sound.bgm);
   oldTs = +new Date();
   var delta = 1000.0 / FRAME_RATE;
   setInterval(function () {
@@ -617,10 +630,12 @@ function render(delta) {
 //  载入资源
 // =============================================================================
 Resource.loadSnds([ // [类型ID, 文件, 音量, 是否循环]
-  [        types.sound.bgm,   'bg.ogg', 0.3, 1],
-  [   types.sound.put_bomb,  'lay.wav',   1, 0],
-  [    types.sound.explode,  'exp.wav',   1, 0],
-  [types.sound.pickup_loot, 'loot.wav',   1, 0]
+  [       types.sound.ship,         'bg.ogg', 0.3, 1],
+  [   types.sound.resident,   'resident.m4a', 0.3, 1],
+  [          types.sound.x,          'x.m4a', 0.3, 1],
+  [   types.sound.put_bomb,        'lay.wav',   1, 0],
+  [    types.sound.explode,        'exp.wav',   1, 0],
+  [types.sound.pickup_loot,        'loot.wav',  1, 0]
 ]);
 
 Resource.loadPngs([ // [类型ID, 文件]
