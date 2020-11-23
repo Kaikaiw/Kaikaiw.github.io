@@ -795,7 +795,7 @@ function intToPlayerState(state) {
   ret.downed = s1 & 0b1; s1 >>= 1;
   ret.maxBombNumber = s1 & 0b1111; s1 >>= 4;
   ret.currentBombNumber = s1 & 0b1111; s1 >>= 4;
-  ret.dir = state;
+  ret.dir = s1;
   return ret;
 }
 
