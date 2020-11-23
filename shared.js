@@ -365,7 +365,7 @@ class PlayerState extends EntityState {
     if (lootId) {
       this.pickupLoot(loots[lootId].type);
       remove(loots, lootId, lootMatrix)
-      clients[this.id].emit('opcode', {o: types.opcode.pickup_loot,});
+      clients[this.id].volatile.emit('opcode', {o: types.opcode.pickup_loot,});
     }
   }
 
