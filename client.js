@@ -579,6 +579,8 @@ Resource.loadSnds([ // [类型ID, 文件, 音量, 是否循环]
 Resource.loadPngs([ // [类型ID, 文件]
   [       types.entity.player,  'char1.png'],
   [       types.entity.player2, 'char2.png'],
+  [       types.entity.player3, 'char1.png'],
+  [       types.entity.player4, 'char2.png'],
   [         types.entity.bomb,   'bomb.png'],
   [         types.entity.wave,   'wave.png'],
   [        types.entity.block,  'block.png'],
