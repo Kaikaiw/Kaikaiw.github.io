@@ -408,7 +408,7 @@ function handleMessage(msg) {
       for (var i in msg.p) {
         var remotePlayer = msg.p[i];
         var subState = intToPlayerState(remotePlayer.s);
-        var id = msg.p[i].id;
+        var id = remotePlayer.id;
         if (!(id in players)) { // 创建玩家
           players[id] = new Player(
             id, subState.x, subState.y, UNIT_WIDTH, UNIT_HEIGHT);
