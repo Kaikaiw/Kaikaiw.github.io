@@ -774,7 +774,6 @@ function handleClientMessage(msg, player) {
   break;
   case types.opcode.put_bomb:
     player.putBomb();
-    restartGame();
   break;
   }
 }
