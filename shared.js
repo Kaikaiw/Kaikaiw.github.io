@@ -260,8 +260,8 @@ class PlayerState extends EntityState {
     super(id, x, y, sizeX, sizeY);
     this.downed = false;
     this.stackedSpeed = 0;
-    this.speed = 0.15;
-    this.maxSpeed = 0.30;
+    this.speed = 15;
+    this.maxSpeed = 30;
     this.power = 1;
     this.maxPower = 8;
     this.currentBombNumber = 0;
@@ -291,7 +291,7 @@ class PlayerState extends EntityState {
   pickupLoot(type) {
     switch(type) {
       case types.loot.speed:
-        this.speed = Math.min(this.maxSpeed, this.speed + 0.02);
+        this.speed = Math.min(this.maxSpeed, this.speed + 4);
       break;
       case types.loot.power:
         this.power = Math.min(this.maxPower, this.power + 1);
@@ -306,19 +306,20 @@ class PlayerState extends EntityState {
     this.dir = dir;
     var toX = this.x;
     var toY = this.y;
+    var diff = this.speed * delta / 100;
 
     switch(dir) {
     case types.dir.up:
-      toY = Math.max(0, this.y - this.speed * delta);
+      toY = Math.max(0, this.y - diff);
       break;
     case types.dir.right:
-      toX = Math.min(WIDTH - this.sizeX, this.x + this.speed * delta);
+      toX = Math.min(WIDTH - this.sizeX, this.x + diff);
       break;
     case types.dir.down:
-      toY = Math.min(HEIGHT - this.sizeY, this.y + this.speed * delta);
+      toY = Math.min(HEIGHT - this.sizeY, this.y + diff);
       break;
     case types.dir.left:
-      toX = Math.max(0, this.x - this.speed * delta);
+      toX = Math.max(0, this.x - diff);
       break;
     }
 
@@ -332,8 +333,8 @@ class PlayerState extends EntityState {
       return;
     }
 
-    this.x = toX;
-    this.y = toY;
+    this.x = Math.round(toX);
+    this.y = Math.round(toY);
     this.rowId = toRowId;
     this.colId = toColId;
 
@@ -769,24 +770,31 @@ function handleClientMessage(msg, player) {
 }
 
 function playerStateToInt(state) {
-  var ret = state.dir;
-  ret = ret << 4 | state.currentBombNumber;
-  ret = ret << 4 | state.maxBombNumber;
-  ret = ret << 1 | state.downed;
-  ret = ret << 4 | state.score;
-  return ret;
+  var r1 = state.dir;
+  r1 = r1 << 4 | state.currentBombNumber;
+  r1 = r1 << 4 | state.maxBombNumber;
+  r1 = r1 << 1 | state.downed;
+  r1 = r1 << 4 | state.score;
+
+  var r2 = state.x;
+  r2 = r2 << 10 | state.y;
+  r2 = r2 << 5 | state.speed;
+  return [r1, r2];
 }
 
 function intToPlayerState(state) {
+  var s1 = state[0];
+  var s2 = state[1];
+
   var ret = {};
-  ret.score = state & 0b1111;
-  state >>= 4;
-  ret.downed = state & 0b1;
-  state >>= 1;
-  ret.maxBombNumber = state & 0b1111;
-  state >>= 4;
-  ret.currentBombNumber = state & 0b1111;
-  state >>= 4;
+  ret.speed = s2 & 0b11111; s2 >>= 5;
+  ret.y = s2 & 0b1111111111; s2 >>= 10;
+  ret.x = s2;
+
+  ret.score = s1 & 0b1111; s1 >>= 4;
+  ret.downed = s1 & 0b1; s1 >>= 1;
+  ret.maxBombNumber = s1 & 0b1111; s1 >>= 4;
+  ret.currentBombNumber = s1 & 0b1111; s1 >>= 4;
   ret.dir = state;
   return ret;
 }
@@ -798,9 +806,6 @@ function broadcastState() {
     playerStates.push({
       id: id,
       aid: p.ackSeqId,
-      x: p.x,
-      y: p.y,
-      sp: p.speed,
       s: playerStateToInt(p),
     });
   }

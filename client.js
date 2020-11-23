@@ -411,13 +411,13 @@ function handleMessage(msg) {
         var id = msg.p[i].id;
         if (!(id in players)) { // 创建玩家
           players[id] = new Player(
-            id, remotePlayer.x, remotePlayer.y, UNIT_WIDTH, UNIT_HEIGHT);
+            id, subState.x, subState.y, UNIT_WIDTH, UNIT_HEIGHT);
         }
 
         var player = players[id];
 
         if (id === localPlayerId) {
-          setPlayerPosition(player, remotePlayer.x, remotePlayer.y);
+          setPlayerPosition(player, subState.x, subState.y);
 
           while (!pendingInputs.empty()) {
             var pendingInput = pendingInputs.peek();
@@ -428,13 +428,13 @@ function handleMessage(msg) {
             }
           }
 
-          player.state.speed = remotePlayer.sp;
+          player.state.speed = subState.speed;
           pendingInputs.iterate((pendingInput) => {
             player.applyInput(pendingInput);
           });
         } else {
           player.state.dir = subState.dir;
-          player.state.buffer.push({'ts': +new Date(), 'x': remotePlayer.x, 'y': remotePlayer.y,});
+          player.state.buffer.push({'ts': +new Date(), 'x': subState.x, 'y': subState.y,});
         }
 
         player.state.score = subState.score;
