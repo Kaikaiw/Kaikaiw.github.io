@@ -323,7 +323,9 @@ class Player extends Entity {
 
     var shouldProcessSpace = !this.spacePressed && keyPressed[types.key.space];
     this.spacePressed = keyPressed[types.key.space];
-    if (shouldProcessSpace && this.state.currentBombNumber < this.state.maxBombNumber) {
+    if (!this.state.downed &&
+      shouldProcessSpace &&
+      this.state.currentBombNumber < this.state.maxBombNumber) {
       server.volatile.emit('opcode', {o: types.opcode.put_bomb,});
       Resource.playSnd(types.sound.put_bomb);
     }
