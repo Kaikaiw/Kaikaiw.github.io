@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js & python3 -m http.server 8000"
+    "start": "node server.js & python3 -m http.server 80"
   },
   "repository": {
     "type": "git",

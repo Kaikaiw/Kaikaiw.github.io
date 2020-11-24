@@ -477,7 +477,7 @@ function init() {
   initGame();
 
   // websocket
-  var socket = io('ws://' + URL + '8081', {
+  var socket = io('ws://' + URL + ':8081', {
     withCredentials: true,
   });
   socket.on('opcode', function(msg) {
