@@ -756,7 +756,7 @@ function clearMatrix(obj) {
   return matrix;
 }
 
-function init(whichMap) {
+function init() {
   boxMatrix = clearMatrix();
   stoneMatrix = clearMatrix();
   bombMatrix = clearMatrix();
@@ -771,7 +771,7 @@ function init(whichMap) {
     remove(boxes, i);
   }
 
-  var map = maps[whichMap];
+  var map = maps[currentMap];
   for (var i = 0; i < MAX_ROW; i++) {
     for (var j = 0; j < MAX_COL; j++) {
       if (map[i][j] == 1) {
@@ -879,10 +879,10 @@ function broadcastState() {
   }
 }
 
-var currentMap = 0;
+var currentMap = 1;
 function restartGame() {
   currentMap = (currentMap + 1) % maps.length;
-  init(currentMap);
+  init();
   numPlayers = 0;
   for (var spawn in playerSpawns) {
     playerSpawns[spawn].spawn = true;
