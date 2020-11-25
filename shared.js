@@ -69,7 +69,7 @@ types = {
 // =============================================================================
 URL = '0.0.0.0';
 FRAME_RATE = 50;
-SERVER_FRAME = 5;
+SERVER_FRAME = 10;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131071;
 MAX_QUEUE_SIZE = 1023;
