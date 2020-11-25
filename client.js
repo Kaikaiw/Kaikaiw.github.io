@@ -85,6 +85,11 @@ class Sprite {
     // 动画帧循环列表, 因为图片是横向衔接, 用于计算起画点
     this.currCycle = 0;
     this.maxCycle = 0;
+    this.currStageTime = 0;
+    this.stageTime = 0;
+    this.currStage = 0;
+    this.maxStage = 0;
+    this.stageCycles = [];
     this.frameVector = [];
     this.type = type;
   }
@@ -121,10 +126,20 @@ class Sprite {
 
   update(delta) {
     this.currTime += delta;
+    this.currStageTime += delta;
     if (this.currTime >= this.cycleTime) {
-      this.currTime = 0.0;
+      this.currTime = 0;
       this.currCycle = (this.currCycle + 1) % this.maxCycle;
       this.startX = this.sizeX * this.currCycle;
+    }
+
+    if (this.maxStage && this.currStageTime >= this.stageTime) {
+      this.currStageTime = 0;
+      this.currTime = 0;
+      this.currCycle = 0;
+      this.currStage = (this.currStage + 1) % this.maxStage;
+      this.maxCycle = this.stageCycles[this.currStage];
+      this.startY += this.startY;
     }
   }
 }
@@ -331,11 +346,15 @@ class Wave extends Entity {
     this.ttl = 500;
     this.spreadTime = 40;
 
-    var sprite = new Sprite(types.entity.wave, UNIT, UNIT, 70, 70);
-    sprite.cycleTime = 400;
+    var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
+    sprite.cycleTime = 20;
     sprite.maxCycle = 2;
     sprite.i = rowId;
     sprite.j = colId;
+    sprite.startY = 61;
+    sprite.stageTime = 320;
+    sprite.maxStage = 2;
+    sprite.stageCycles = [sprite.maxCycle, 9];
     this.sprites.push(sprite);
 
     var directions = [ // [[step_i, step_j]]
@@ -352,17 +371,25 @@ class Wave extends Entity {
     if (this.createTime + this.spreadTime < nowTs) {
       var n = this.sprites.length;
       if (n < this.len) {
-        var sprite = new Sprite(types.entity.wave, UNIT, UNIT, 70, 70);
-        sprite.cycleTime = 400;
+        var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
+        sprite.cycleTime = 20;
         sprite.maxCycle = 2;
         var previous = this.sprites[n - 1];
         sprite.i = previous.i + this.direction[0];
         sprite.j = previous.j + this.direction[1];
+        sprite.startY = 61;
+        sprite.stageTime = 320;
+        sprite.maxStage = 2;
+        sprite.stageCycles = [sprite.maxCycle, 9];
         this.sprites.push(sprite);
       }
     }
 
     for (var i in this.sprites) {
+      var s = this.sprites[i];
+      if (s.currStage == 1 && s.currCycle == 8) {
+        continue;
+      }
       this.sprites[i].update(delta);
     }
 
@@ -376,7 +403,27 @@ class Wave extends Entity {
       var s = this.sprites[i];
       var cx = s.j * UNIT + (UNIT >> 1) - (s.sizeDrawX >> 1);
       var cy = s.i * UNIT + (UNIT >> 1) - (s.sizeDrawY >> 1);
-      s.renderWith(delta, cx, cy, undefined, (this.dir % 4) * s.sizeY);
+
+      // 旋转
+      var translates = [
+        [cx, cy], // 空位
+        [cx, cy + s.sizeDrawY], // 上
+        [cx, cy], // 右
+        [cx + s.sizeDrawX, cy], // 下
+        [cx + s.sizeDrawX, cy + s.sizeDrawY], // 左
+      ];
+      var angles = [
+        [0 * Math.PI], // 空位
+        [270 * Math.PI / 180], // 上
+        [0 * Math.PI / 180], // 右
+        [90 * Math.PI / 180], // 下
+        [180 * Math.PI / 180], // 左
+      ]
+      ctx.translate(translates[this.dir][0], translates[this.dir][1]);
+      ctx.rotate(angles[this.dir]);
+      s.renderWith(delta, 0, 0, undefined, s.startY);
+      ctx.rotate(-angles[this.dir]);
+      ctx.translate(-translates[this.dir][0], -translates[this.dir][1]);
     }
   }
 }
@@ -509,10 +556,22 @@ function handleMessage(msg) {
       var bbMatrix = intArrayToMatrix(msg.bb);
       var newBombMatrix = bbMatrix[1];
       var bombed = false;
+      var waveNumber = Object.keys(wavesClient).length;
+
       for (var i = 0; i < MAX_ROW; i++) {
         for (var j = 0; j < MAX_COL; j++) {
           if (bombMatrix[i][j] && !newBombMatrix[i][j]) {
             bombed = true;
+
+            var waveCenter = new Wave(waveNumber, i, j, 0, 0);
+            waveCenter.ttl = 400;
+            waveCenter.sprites[0].cycleTime = 20;
+            waveCenter.sprites[0].maxCycle = 3;
+            waveCenter.sprites[0].startY = 0;
+            waveCenter.sprites[0].maxStage = 0;
+            waveCenter.sprites[0].sizeDrawX = 72;
+            waveCenter.sprites[0].sizeDrawy = 72;
+            wavesClient[waveNumber++] = waveCenter;
           }
           bombMatrix[i][j] = newBombMatrix[i][j];
         }
@@ -521,7 +580,6 @@ function handleMessage(msg) {
         Resource.playSnd(types.sound.explode);
       }
 
-      var waveNumber = Object.keys(wavesClient).length;
       for (var i in msg.w) {
         var remoteWave = msg.w[i];
         var subState = intToWaveState(remoteWave.s);
