@@ -68,7 +68,7 @@ types = {
 //  全局配置 / 坐标转换
 // =============================================================================
 URL = '0.0.0.0';
-FRAME_RATE = 30;
+FRAME_RATE = 40;
 SERVER_FRAME = 10;
 INFINITE = Number.MAX_VALUE;
 MAX_ID = 131071;
