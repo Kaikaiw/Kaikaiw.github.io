@@ -366,7 +366,7 @@ class PlayerState extends EntityState {
       return;
     }
 
-    if (waveMatrix[toRowId][toColId]) {
+    if (waveMatrix[this.rowId][this.colId]) {
       this.downPlayer();
     } 
 
