@@ -744,19 +744,13 @@ function intArray4ToMatrix(array) {
 
   for (var i = 0; i < MAX_ROW; i++) {
     matrix[i] = {};
-    var ds = [];
+    var j = 0;
     while (array[i]) {
-      ds.push(array[i] % 4);
+      matrix[i][j++] = array[i] % 4;
       array[i] = Math.floor(array[i] / 4);
     }
-    var j = 0;
-    while (j < ds.length) {
-      matrix[i][j] = ds[j];
-      j++;
-    }
     while (j < MAX_COL) {
-      matrix[i][j] = 0;
-      j++;
+      matrix[i][j++] = 0;
     }
   }
 
