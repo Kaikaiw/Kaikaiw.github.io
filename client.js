@@ -90,21 +90,9 @@ class Sprite {
   }
 
   render(delta, positionX, positionY) {
-    ctx.drawImage(
-      Resource.getPng(this.type),
-      // 图片起画点
-      this.startX,
-      this.startY,
-      // 大小
-      this.sizeX,
-      this.sizeY,
-      // 画哪
-      positionX - (this.sizeDrawX - UNIT_WIDTH) / 2,
-      positionY - (this.sizeDrawY - UNIT_HEIGHT),
-      // 实际大小
-      this.sizeDrawX,
-      this.sizeDrawY
-    );
+    positionX = positionX + (UNIT >> 1) - (this.sizeDrawX >> 1);
+    positionY = positionY + (UNIT >> 1) - (this.sizeDrawY >> 1);
+    this.renderWith(delta, positionX, positionY);
   }
 
   renderWith(delta, positionX, positionY, startX, startY) {
@@ -117,47 +105,11 @@ class Sprite {
       this.sizeX,
       this.sizeY,
       // 画哪
-      positionX - (this.sizeDrawX - UNIT_WIDTH) / 2,
-      positionY - (this.sizeDrawY - UNIT_HEIGHT),
+      positionX,
+      positionY,
       // 实际大小
       this.sizeDrawX,
       this.sizeDrawY
-    );
-  }
-
-  renderBottom(delta, positionX, positionY) {
-    ctx.drawImage(
-      Resource.getPng(this.type),
-      // 图片起画点
-      this.startX,
-      this.startY + this.sizeY * 3 / 5,
-      // 大小
-      this.sizeX,
-      this.sizeY * 2 / 5,
-      // 画哪
-      positionX - (this.sizeDrawX - UNIT_WIDTH) / 2,
-      positionY - (this.sizeDrawY - UNIT_HEIGHT) + this.sizeDrawY * 3 / 5,
-      // 实际大小
-      this.sizeDrawX,
-      this.sizeDrawY * 2 / 5,
-    );
-  }
-
-  renderTop(delta, positionX, positionY) {
-    ctx.drawImage(
-      Resource.getPng(this.type),
-      // 图片起画点
-      this.startX,
-      this.startY,
-      // 大小
-      this.sizeX,
-      this.sizeY * 3 / 5,
-      // 画哪
-      positionX - (this.sizeDrawX - UNIT_WIDTH) / 2,
-      positionY - (this.sizeDrawY - UNIT_HEIGHT),
-      // 实际大小
-      this.sizeDrawX,
-      this.sizeDrawY * 3 / 5,
     );
   }
 
@@ -186,15 +138,11 @@ class Entity {
     this.state = null;
   }
 
-  render(delta) {
-    this.sprite.render(delta, this.state.x, this.state.y);
-  }
-
-  renderAt(delta, x, y)  {
+  render(delta, x, y)  {
     this.sprite.render(delta, x, y);
   }
 
-  renderWithAt(delta, x, y, startX, startY) {
+  renderWith(delta, x, y, startX, startY) {
     this.sprite.renderWith(delta, x, y, startX, startY);
   }
 
@@ -214,7 +162,7 @@ class Block extends Entity {
     super();
     // 魔法数字...
     this.sprite =
-        new Sprite(types.entity.block, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
+        new Sprite(types.entity.block, UNIT, UNIT, UNIT, UNIT);
     this.sprite.cycleTime = -1;
     this.sprite.maxCycle = 1;
   }
@@ -229,7 +177,7 @@ class Stone extends Entity {
     super();
     // 魔法数字...
     this.sprite =
-        new Sprite(types.entity.stone, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
+        new Sprite(types.entity.stone, 64, 79, UNIT, UNIT * 1.23);
     this.sprite.cycleTime = -1;
     this.sprite.maxCycle = 1;
   }
@@ -244,7 +192,7 @@ class Box extends Entity {
     // 魔法数字...
     this.state = new BoxState(id, x, y);
     this.sprite =
-      new Sprite(types.entity.box, 64, 79, UNIT_WIDTH, UNIT_HEIGHT * 1.23);
+      new Sprite(types.entity.box, 64, 79, UNIT, UNIT * 1.23);
     this.sprite.cycleTime = -1;
     this.sprite.maxCycle = 1;
   }
@@ -259,7 +207,7 @@ class Loot extends Entity {
     // 魔法数字...
     this.state = new EntityState(id, x, y);
     this.sprite = new Sprite(
-        types.entity.loot, 32, 48, UNIT_WIDTH, UNIT_HEIGHT * 1.5);
+        types.entity.loot, 32, 48, UNIT, UNIT * 1.5);
     this.sprite.cycleTime = INFINITE;
     this.sprite.maxCycle = 1;
   }
@@ -270,9 +218,9 @@ loots = {};
 //  玩家
 // =============================================================================
 class Player extends Entity {
-  constructor(id, x, y, sizeX, sizeY, playerNum) {
+  constructor(id, x, y, size, playerNum) {
     super();
-    this.state = new PlayerState(id, x, y, sizeX, sizeY, playerNum);
+    this.state = new PlayerState(id, x, y, size, playerNum);
     // 魔法数字...
     this.sprite = new Sprite(playerNumToType[playerNum], 96, 118, 96, 118);
     this.sprite.maxCycle = 4;
@@ -339,14 +287,6 @@ class Player extends Entity {
       pendingInputs.push(localInput);
     }
   }
-
-  renderBottom(delta) {
-    this.sprite.renderBottom(delta, this.state.x, this.state.y);
-  }
-
-  renderTop(delta) {
-    this.sprite.renderTop(delta, this.state.x, this.state.y);
-  }
 }
 localPlayerId = '';
 playerNumToType = [
@@ -391,7 +331,7 @@ class Wave extends Entity {
     this.ttl = 500;
     this.spreadTime = 40;
 
-    var sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
+    var sprite = new Sprite(types.entity.wave, UNIT, UNIT, 70, 70);
     sprite.cycleTime = 400;
     sprite.maxCycle = 2;
     sprite.i = rowId;
@@ -412,7 +352,7 @@ class Wave extends Entity {
     if (this.createTime + this.spreadTime < nowTs) {
       var n = this.sprites.length;
       if (n < this.len) {
-        var sprite = new Sprite(types.entity.wave, UNIT_WIDTH, UNIT_HEIGHT, UNIT_WIDTH, UNIT_HEIGHT);
+        var sprite = new Sprite(types.entity.wave, UNIT, UNIT, 70, 70);
         sprite.cycleTime = 400;
         sprite.maxCycle = 2;
         var previous = this.sprites[n - 1];
@@ -434,8 +374,9 @@ class Wave extends Entity {
   render(delta) {
     for (var i in this.sprites) {
       var s = this.sprites[i];
-      s.renderWith(
-        delta, s.j * UNIT_WIDTH, s.i * UNIT_HEIGHT, undefined, (this.dir % 4) * s.sizeY);
+      var cx = s.j * UNIT + (UNIT >> 1) - (s.sizeDrawX >> 1);
+      var cy = s.i * UNIT + (UNIT >> 1) - (s.sizeDrawY >> 1);
+      s.renderWith(delta, cx, cy, undefined, (this.dir % 4) * s.sizeY);
     }
   }
 }
@@ -528,8 +469,7 @@ function handleMessage(msg) {
         var subState = intToPlayerState(remotePlayer.s);
         var id = remotePlayer.id;
         if (!(id in players)) { // 创建玩家
-          players[id] = new Player(
-            id, subState.x, subState.y, UNIT_WIDTH, UNIT_HEIGHT, subState.playerNum);
+          players[id] = new Player(id, subState.x, subState.y, UNIT, subState.playerNum);
         }
 
         var player = players[id];
@@ -618,7 +558,7 @@ function initGame() {
   for (var i = 0; i < MAX_ROW; i++) {
     blockMatrix[i] = new Array(MAX_COL);
     for (var j = 0; j < MAX_COL; j++)
-      blockMatrix[i][j] = Math.floor(Math.random() * 5);
+      blockMatrix[i][j] = getRandomInt(5);
   }
 
   boxMatrix = clearMatrix();
@@ -641,7 +581,7 @@ function initGame() {
 function render(delta) {
   for (var i = 0; i < MAX_ROW; i++) {
     for (var j = 0; j < MAX_COL; j++) {
-      block.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, blockMatrix[i][j] * block.sprite.sizeX, 0);
+      block.renderWith(0, j * UNIT, i * UNIT, blockMatrix[i][j] * block.sprite.sizeX, 0);
     }
   }
 
@@ -652,28 +592,31 @@ function render(delta) {
   for (var i = 0; i < MAX_ROW; i++) {
     var playersToRender = [];
     for (var j = 0; j < MAX_COL; j++) {
-      if (bombMatrix[i][j]) {
-        bomb.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
-      }
-      for (var playerId in playerMatrix[i][j]) {
-        players[playerId].renderBottom(delta);
-        playersToRender.push(playerId);
-      }
-    }
-    for (var j = 0; j < MAX_COL; j++) {
+      var renderX = j * UNIT;
+      var renderY = i * UNIT;
       if (boxMatrix[i][j]) {
-        box.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
+        box.render(0, renderX, renderY);
       }
       if (stoneMatrix[i][j]) {
-        stone.renderAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT);
+        stone.render(0, renderX, renderY);
+      }
+      if (bombMatrix[i][j]) {
+        bomb.render(0, renderX, renderY);
       }
       if (lootMatrix[i][j]) {
-        loot.renderWithAt(0, j * UNIT_WIDTH, i * UNIT_HEIGHT, (lootMatrix[i][j] - 1) * loot.sprite.sizeX, 0);
+        renderY -= loot.sprite.sizeDrawY >> 1;
+        loot.renderWith(0, renderX, renderY, (lootMatrix[i][j] - 1) * loot.sprite.sizeX, 0);
+      }
+      for (var id in playerMatrix[i][j]) {
+        playersToRender.push(id);
       }
     }
 
     for (var id in playersToRender) {
-      players[playersToRender[id]].renderTop(delta);
+      var player = players[playersToRender[id]];
+      var renderX = player.state.x - (UNIT >> 1);
+      var renderY = player.state.y - (player.sprite.sizeDrawY >> 1);
+      player.render(delta, renderX, renderY);
     }
   }
 

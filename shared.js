@@ -75,10 +75,9 @@ MAX_ID = 131071;
 MAX_QUEUE_SIZE = 1023;
 MAX_ROW = 13;
 MAX_COL = 15;
-UNIT_WIDTH = 64;
-UNIT_HEIGHT = 64;
-WIDTH = UNIT_WIDTH * MAX_COL;
-HEIGHT = UNIT_HEIGHT * MAX_ROW;
+UNIT = 64;
+WIDTH = UNIT * MAX_COL;
+HEIGHT = UNIT * MAX_ROW;
 MAX_PLAYERS = 4;
 numPlayers = 0;
 // 硬编码地图
@@ -135,11 +134,11 @@ function bind(rowId, colId) {
 }
 // 转换垂直坐标到2d矩阵行
 function getRowID(vertical) {
-  return Math.floor((vertical + UNIT_HEIGHT / 2) / UNIT_HEIGHT);
+  return Math.floor(vertical / UNIT);
 }
 // 转换水平坐标到2d矩阵列
 function getColID(horizontal) {
-  return Math.floor((horizontal + UNIT_WIDTH / 2) / UNIT_WIDTH);
+  return Math.floor(horizontal / UNIT);
 }
 // 删除
 function remove(dict, id, matrix) {
@@ -218,12 +217,11 @@ class Queue {
 //  实体核心
 // =============================================================================
 class EntityState {
-  constructor(id, x, y, sizeX, sizeY) {
+  constructor(id, x, y, size) {
     this.id = id;
     this.x = x;
     this.y = y;
-    this.sizeX = sizeX;
-    this.sizeY = sizeY;
+    this.size = size;
     this.rowId = getRowID(y);
     this.colId = getColID(x);
     this.dir = 0;
@@ -260,8 +258,8 @@ var stoneMatrix;
 //  玩家核心
 // =============================================================================
 class PlayerState extends EntityState {
-  constructor(id, x, y, sizeX, sizeY, playerNum){
-    super(id, x, y, sizeX, sizeY);
+  constructor(id, x, y, size, playerNum){
+    super(id, x, y, size);
     this.downed = false;
     this.downedFrame = 0;
     this.stackedSpeed = 0;
@@ -284,7 +282,7 @@ class PlayerState extends EntityState {
       this.downed = true;
       this.downedFrame = 0;
       this.stackedSpeed = this.speed;
-      this.speed = 1;
+      this.speed = 3;
     }
   }
 
@@ -314,21 +312,23 @@ class PlayerState extends EntityState {
     var toX = this.x;
     var toY = this.y;
     var diff = this.speed * delta / 100;
+    var edge = this.size >> 1;
 
     switch(dir) {
     case types.dir.up:
-      toY = Math.max(0, this.y - diff);
+      toY = Math.max(0, this.y - edge - diff);
       break;
     case types.dir.right:
-      toX = Math.min(WIDTH - this.sizeX, this.x + diff);
+      toX = Math.min(WIDTH, this.x + edge + diff);
       break;
     case types.dir.down:
-      toY = Math.min(HEIGHT - this.sizeY, this.y + diff);
+      toY = Math.min(HEIGHT, this.y + edge + diff);
       break;
     case types.dir.left:
-      toX = Math.max(0, this.x - diff);
+      toX = Math.max(0, this.x - edge - diff);
       break;
     }
+
     toX = Math.round(toX);
     toY = Math.round(toY);
 
@@ -342,10 +342,25 @@ class PlayerState extends EntityState {
       return;
     }
 
+    switch(dir) {
+    case types.dir.up:
+      toY += edge;
+      break;
+    case types.dir.right:
+      toX -= edge;
+      break;
+    case types.dir.down:
+      toY -= edge;
+      break;
+    case types.dir.left:
+      toX += edge;
+      break;
+    }
+
     this.x = toX;
     this.y = toY;
-    this.rowId = toRowId;
-    this.colId = toColId;
+    this.rowId = getRowID(toY);
+    this.colId = getColID(toX);
 
     if (!isServer) {
       return;
@@ -584,7 +599,7 @@ var bombMatrix;
 // =============================================================================
 class WaveState extends EntityState {
   constructor(id, rowId, colId, dir, len) {
-    super(id, colId * UNIT_WIDTH, rowId * UNIT_HEIGHT);
+    super(id, colId * UNIT, rowId * UNIT);
     this.dir = dir;
     this.type = dir;
     this.rowId = rowId;
@@ -776,7 +791,7 @@ function init() {
     for (var j = 0; j < MAX_COL; j++) {
       if (map[i][j] == 1) {
         var id = getID();
-        boxes[id] = new BoxState(id, j * UNIT_WIDTH, i * UNIT_HEIGHT);
+        boxes[id] = new BoxState(id, j * UNIT, i * UNIT);
         boxMatrix[i][j] = id;
       } else if (map[i][j] == 2) {
         stoneMatrix[i][j] = 1;
@@ -982,10 +997,10 @@ function tick(delta, serverUpdateCallback, callback) {
 }
 
 playerSpawns = [
-  {spawn: true, where: [0, UNIT_HEIGHT * (MAX_ROW - 1)]},
-  {spawn: true, where: [0, 0]},
-  {spawn: true, where: [UNIT_WIDTH * (MAX_COL - 1), 0]},
-  {spawn: true, where: [UNIT_WIDTH * (MAX_COL - 1), UNIT_HEIGHT * (MAX_ROW - 1)]},
+  {spawn: true, where: [UNIT >> 1, UNIT * (MAX_ROW - 1) + (UNIT >> 1)]},
+  {spawn: true, where: [UNIT >> 1, UNIT >> 1]},
+  {spawn: true, where: [UNIT * (MAX_COL - 1) + (UNIT >> 1), UNIT >> 1]},
+  {spawn: true, where: [UNIT * (MAX_COL - 1) + (UNIT >> 1), UNIT * (MAX_ROW - 1) + (UNIT >> 1)]},
 ];
 spawnedPlayers = {};
 
@@ -997,7 +1012,7 @@ function doSpawn(id) {
     }
     var spawnX = spawn.where[0];
     var spawnY = spawn.where[1];
-    players[id] = new PlayerState(id, spawnX, spawnY, UNIT_WIDTH, UNIT_HEIGHT, i);
+    players[id] = new PlayerState(id, spawnX, spawnY, UNIT, i);
     spawnedPlayers[id] = i;
     spawn.spawn = false;
     numPlayers++;
@@ -1028,15 +1043,7 @@ function disconnectPlayer(id) {
 // =============================================================================
 //  SERVER EXPORTS
 // =============================================================================
-E.types = types;
-E.INFINITE = INFINITE;
 E.MAX_ID = MAX_ID;
-E.MAX_ROW = MAX_ROW;
-E.MAX_COL = MAX_COL;
-E.WIDTH = WIDTH;
-E.HEIGHT = HEIGHT;
-E.UNIT_WIDTH = UNIT_WIDTH;
-E.UNIT_HEIGHT = UNIT_HEIGHT;
 E.init = init;
 E.tick = tick;
 E.spawnPlayer = spawnPlayer;
