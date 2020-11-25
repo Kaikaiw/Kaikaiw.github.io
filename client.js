@@ -530,7 +530,7 @@ function handleMessage(msg) {
       }
 
       boxMatrix = bbMatrix[0];
-      lootMatrix = stringArrayToMatrix(msg.l);
+      lootMatrix = intArray4ToMatrix(msg.l);
     break;
     case types.opcode.pickup_loot:
       Resource.playSnd(types.sound.pickup_loot);

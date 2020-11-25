@@ -723,17 +723,15 @@ function intArrayToMatrix(array) {
   return [m1, m2];
 }
 
-function matrixToStringArray(matrix, objects) {
+function matrixToIntArray4(matrix, objects) {
   var array = [];
 
   for (var i = 0; i < MAX_ROW; i++) {
-    var rowMask = '';
+    var rowMask = 0;
+    var d = 1;
     for (var j = 0; j < MAX_COL; j++) {
-      if (matrix[i][j]) {
-        rowMask += objects[matrix[i][j]].type.toString();
-      } else {
-        rowMask += '0';
-      }
+      rowMask += d * (matrix[i][j] ? objects[matrix[i][j]].type : 0);
+      d *= 4;
     }
     array.push(rowMask);
   }
@@ -741,13 +739,24 @@ function matrixToStringArray(matrix, objects) {
   return array;
 }
 
-function stringArrayToMatrix(array) {
+function intArray4ToMatrix(array) {
   var matrix = {};
 
   for (var i = 0; i < MAX_ROW; i++) {
     matrix[i] = {};
-    for (var j = 0; j < MAX_COL; j++) {
-      matrix[i][j] = parseInt(array[i][j]);
+    var ds = [];
+    while (array[i]) {
+      ds.push(array[i] % 4);
+      array[i] = Math.floor(array[i] / 4);
+    }
+    var j = 0;
+    while (j < ds.length) {
+      matrix[i][j] = ds[j];
+      j++;
+    }
+    while (j < MAX_COL) {
+      matrix[i][j] = 0;
+      j++;
     }
   }
 
@@ -889,7 +898,7 @@ function broadcastState() {
       p: playerStates,
       bb: matrixToIntArray(bombMatrix, boxMatrix),
       w: waveStates,
-      l: matrixToStringArray(lootMatrix, loots),
+      l: matrixToIntArray4(lootMatrix, loots),
     });
   }
 }
