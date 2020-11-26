@@ -367,7 +367,8 @@ class Wave extends Entity {
   }
 
   update(delta) {
-    if (this.createTime++ == this.spreadTime) {
+    this.createTime++;
+    if (this.createTime % this.spreadTime == 0) {
       var n = this.sprites.length;
       if (n < this.len) {
         var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
