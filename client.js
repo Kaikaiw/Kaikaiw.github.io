@@ -629,9 +629,15 @@ function initGame() {
   // 开始游戏
   var delta = 1000.0 / FRAME_RATE;
   setInterval(function () {
-    tick(delta, () => { return false; }, handleMessage);
-    render(delta);
+    while (!msgQueue.empty()) {
+      handleMessage(msgQueue.shift());
+    }
+
+    update(delta);
     bomb.update(delta);
+    for (var i in players) { players[i].update(delta); }
+    for (var i in wavesClient) { wavesClient[i].update(delta); }
+    render(delta);
   }, delta);
 }
 

@@ -6,8 +6,10 @@ var E = require('./shared.js');
 function initGame() {
   E.prepID(E.MAX_ID);
   E.init();
+  var delta = 1000.0 / E.SERVER_FRAME;
   setInterval(function () {
-     E.tick(1000.0 / E.SERVER_FRAME, E.serverUpdate, E.handleClientMessage);
+     E.serverUpdate();
+     E.update(delta);
   }, 1000.0 / E.SERVER_FRAME);
 }
 

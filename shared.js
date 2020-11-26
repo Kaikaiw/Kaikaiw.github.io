@@ -920,7 +920,7 @@ function serverUpdate(delta, callback) {
     var ctr = 0;
     while (ctr < FRAME_RATE / SERVER_FRAME && !queue.empty()) {
       ctr++;
-      callback(queue.shift(), player);
+      handleClientMessage(queue.shift(), player);
     }
   }
 
@@ -943,6 +943,7 @@ function serverUpdate(delta, callback) {
 
   // 更新其他
   for (var i in bombs) { bombs[i].update(delta); }
+  for (var i in waves) { waves[i].update(delta); }
 
   for (var id in toDestroyBoxes) {
     var rand = getRandomInt(100);
@@ -961,13 +962,9 @@ function serverUpdate(delta, callback) {
   toDestroyBoxes = {};
 
   broadcastState();
-  return true;
 }
 
-function update(delta, serverUpdateCallback, callback) {
-  // 接收网络消息
-  var server = serverUpdateCallback(delta, callback);
-
+function update(delta) {
   for (var i = 0; i < MAX_ROW; i++) {
     for (var j = 0; j < MAX_COL; j++) {
       playerMatrix[i][j] = {};
@@ -979,23 +976,6 @@ function update(delta, serverUpdateCallback, callback) {
     var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
     playerMatrix[rowId][colId][id] = 1;
   }
-  for (var i in waves) { waves[i].update(delta); }
-
-  if (server) {
-    return;
-  }
-
-  while (!msgQueue.empty()) {
-    callback(msgQueue.shift()); // handleMessage
-  }
-
-  // 更新玩家
-  for (var i in players) { players[i].update(delta); }
-  for (var i in wavesClient) { wavesClient[i].update(delta); }
-}
-
-function tick(delta, serverUpdateCallback, callback) {
-  update(delta, serverUpdateCallback, callback);
 }
 
 playerSpawns = [
@@ -1047,10 +1027,9 @@ function disconnectPlayer(id) {
 // =============================================================================
 E.MAX_ID = MAX_ID;
 E.init = init;
-E.tick = tick;
+E.update = update;
 E.spawnPlayer = spawnPlayer;
 E.recvMessage = recvMessage;
-E.handleClientMessage = handleClientMessage;
 E.serverUpdate = serverUpdate;
 E.SERVER_FRAME = SERVER_FRAME;
 E.prepID = prepID;
