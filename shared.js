@@ -409,7 +409,7 @@ class PlayerState extends EntityState {
   }
 
   update(delta) {
-    var renderTs = +new Date() - 1000.0 / SERVER_FRAME;
+    var renderTs = frameCtr - FRAME_RATE / SERVER_FRAME;
 
     while (this.buffer.length() >= 2 && this.buffer.peekSecond().ts <= renderTs) {
       this.buffer.shift();
@@ -940,6 +940,7 @@ function serverUpdate(delta, callback) {
 
   if (shouldRestart) {
     restartGame();
+    frameCtr = 0;
   }
 
   // 更新其他
@@ -965,6 +966,7 @@ function serverUpdate(delta, callback) {
   return true;
 }
 
+var frameCtr = 0;
 function update(delta, serverUpdateCallback, callback) {
   // 接收网络消息
   var server = serverUpdateCallback(delta, callback);
@@ -996,6 +998,7 @@ function update(delta, serverUpdateCallback, callback) {
 }
 
 function tick(delta, serverUpdateCallback, callback) {
+  frameCtr++;
   update(delta, serverUpdateCallback, callback);
 }
 
