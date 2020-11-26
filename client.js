@@ -342,9 +342,9 @@ class Wave extends Entity {
     this.dir = dir;
     this.len = len;
     this.sprites = [];
-    this.createTime = +new Date();
-    this.ttl = 500;
-    this.spreadTime = 40;
+    this.createTime = 0;
+    this.ttl = 25;
+    this.spreadTime = 2;
 
     var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
     sprite.cycleTime = 20;
@@ -367,8 +367,7 @@ class Wave extends Entity {
   }
 
   update(delta) {
-    var nowTs = +new Date();
-    if (this.createTime + this.spreadTime < nowTs) {
+    if (this.createTime++ == this.spreadTime) {
       var n = this.sprites.length;
       if (n < this.len) {
         var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
@@ -393,7 +392,7 @@ class Wave extends Entity {
       this.sprites[i].update(delta);
     }
 
-    if (this.createTime + this.ttl < nowTs) {
+    if (this.createTime == this.ttl) {
       delete wavesClient[this.id];
     }
   }
@@ -564,7 +563,7 @@ function handleMessage(msg) {
             bombed = true;
 
             var waveCenter = new Wave(waveNumber, i, j, 0, 0);
-            waveCenter.ttl = 400;
+            waveCenter.ttl = 20;
             waveCenter.sprites[0].cycleTime = 20;
             waveCenter.sprites[0].maxCycle = 3;
             waveCenter.sprites[0].startY = 0;
@@ -627,7 +626,6 @@ function initGame() {
   playerMatrix = clearMatrix({});
 
   // 开始游戏
-  oldTs = +new Date();
   var delta = 1000.0 / FRAME_RATE;
   setInterval(function () {
     tick(delta, () => { return false; }, handleMessage);

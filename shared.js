@@ -468,8 +468,8 @@ class BombState extends EntityState {
     super(id, x, y);
     this.chain = [];
     this.power = power;
-    this.putTime = +new Date();
-    this.ttl = 3000; // 3秒
+    this.putTime = 0;
+    this.ttl = 30; // 3秒
     this.owner = owner;
     if (x != -1) {
       bombMatrix[this.rowId][this.colId] = id;
@@ -585,8 +585,7 @@ class BombState extends EntityState {
   }
 
   update(delta) {
-    var nowTs = +new Date();
-    if (nowTs - this.putTime >= this.ttl) {
+    if (this.putTime++ == this.ttl) {
       bombsVisited = {};
       this.chainBomb(this);
     }
@@ -607,13 +606,12 @@ class WaveState extends EntityState {
     this.rowId = rowId;
     this.colId = colId;
     this.len = len;
-    this.createTime = +new Date();
-    this.ttl = 500 // 0.5秒
+    this.createTime = 0;
+    this.ttl = 5; // 0.5秒
   }
 
   update(delta) {
-    var nowTs = +new Date();
-    if (this.createTime + this.ttl < nowTs) {
+    if (this.createTime++ == this.ttl) {
       remove(waves, this.id);
 
       var directions = [ // [[end_i, end_j, step_i, step_j]]
