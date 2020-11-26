@@ -10,7 +10,7 @@ function initGame() {
   setInterval(function () {
      E.serverUpdate();
      E.update(delta);
-  }, 1000.0 / E.SERVER_FRAME);
+  }, delta);
 }
 
 function init() {

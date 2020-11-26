@@ -343,7 +343,7 @@ class Wave extends Entity {
     this.len = len;
     this.sprites = [];
     this.createTime = 0;
-    this.ttl = 25;
+    this.ttl = FRAME_RATE >> 1; // 0.5秒
     this.spreadTime = 2;
 
     var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);

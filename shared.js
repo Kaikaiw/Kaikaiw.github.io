@@ -270,7 +270,7 @@ class PlayerState extends EntityState {
     this.currentBombNumber = 0;
     this.maxBombNumber = 1;
     this.maxMaxBombNumber = 8;
-    this.buffer = new Queue(MAX_QUEUE_SIZE); // 插值玩家状态
+    this.buffer = new Queue(FRAME_RATE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
     this.msgQueue = new Queue(FRAME_RATE);
@@ -468,7 +468,7 @@ class BombState extends EntityState {
     this.chain = [];
     this.power = power;
     this.putTime = 0;
-    this.ttl = 30; // 3秒
+    this.ttl = SERVER_FRAME * 3; // 3秒
     this.owner = owner;
     if (x != -1) {
       bombMatrix[this.rowId][this.colId] = id;
@@ -606,7 +606,7 @@ class WaveState extends EntityState {
     this.colId = colId;
     this.len = len;
     this.createTime = 0;
-    this.ttl = 5; // 0.5秒
+    this.ttl = SERVER_FRAME >> 1; // 0.5秒
   }
 
   update(delta) {
