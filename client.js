@@ -539,7 +539,7 @@ function handleMessage(msg) {
           });
         } else {
           player.state.dir = subState.dir;
-          player.state.buffer.push({'ts': frameCtr, 'x': subState.x, 'y': subState.y,});
+          player.state.buffer.push({'ts': player.state.frameCtr, 'x': subState.x, 'y': subState.y,});
         }
 
         player.state.score = subState.score;
