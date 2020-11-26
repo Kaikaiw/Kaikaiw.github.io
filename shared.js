@@ -410,8 +410,7 @@ class PlayerState extends EntityState {
   }
 
   update(delta) {
-    this.frameCtr++;
-    var renderTs = this.frameCtr - FRAME_RATE / SERVER_FRAME;
+    var renderTs = this.frameCtr++ - FRAME_RATE / SERVER_FRAME;
 
     while (this.buffer.length() >= 2 && this.buffer.peekSecond().ts <= renderTs) {
       this.buffer.shift();
