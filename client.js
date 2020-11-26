@@ -691,7 +691,7 @@ function render(delta) {
 Resource.loadSnds([ // [类型ID, 文件, 音量, 是否循环]
   [       types.sound.ship,         'bg.ogg', 0.3, 1],
   [   types.sound.resident,   'resident.m4a', 0.3, 1],
-  [          types.sound.x,          'x.m4a', 0.3, 1],
+  [          types.sound.x,        'sea.mp3', 0.3, 1],
   [   types.sound.put_bomb,        'lay.wav',   1, 0],
   [    types.sound.explode,        'exp.wav',   1, 0],
   [types.sound.pickup_loot,        'loot.wav',  1, 0]
