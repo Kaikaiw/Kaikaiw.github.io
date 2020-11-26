@@ -53,13 +53,7 @@ Resource.getPng = function(key) {
 
 Resource.playSnd = function(key) {
   Resource.sndMap[key].currentTime = 0;
-  var promise = Resource.sndMap[key].play();
-  if (promise != undefined) {
-    promise.then(_ => {
-    }).catch(error => {
-      setTimeout(function(){ Resource.playSnd(key); }, 1000);
-    });
-  }
+  Resource.sndMap[key].play();
 };
 
 Resource.pauseSnd = function(key) {
