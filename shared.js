@@ -485,8 +485,14 @@ class BombState extends EntityState {
     }
 
     this.dir = dir;
-    for (var bombId in this.chain) {
-      delete bombs[bombId].chain[this.id];
+    for (var i in this.chain) {
+      var c = bombs[this.chain[i]].chain;
+      for (var j in c) {
+        if (c[j] == this.id) {
+          c.splice(j, 1);
+          break;
+        }
+      }
     }
     this.chain = [];
     bombMatrix[this.rowId][this.colId] = 0;
