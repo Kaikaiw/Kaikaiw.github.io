@@ -8,7 +8,7 @@ function initGame() {
   E.init();
   var delta = 1000.0 / E.SERVER_FRAME;
   setInterval(function () {
-     E.serverUpdate();
+     E.serverUpdate(delta);
      E.update(delta);
   }, delta);
 }

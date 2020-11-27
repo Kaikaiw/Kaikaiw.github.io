@@ -315,10 +315,39 @@ class Bomb extends Entity {
     this.sprite = new Sprite(types.entity.bomb, 64, 64, 88, 88);
     this.sprite.cycleTime = 150;
     this.sprite.maxCycle = 3;
+    this.state = new BombState(id, x, y, 0, 0, UNIT);
+    this.buffer = new Queue(FRAME_RATE);
+    this.frameCtr = 0;
   }
 
   update(delta) {
     this.sprite.update(delta);
+
+    var renderTs = this.frameCtr++ - FRAME_RATE / SERVER_FRAME;
+
+    while (this.buffer.length() >= 2 && this.buffer.peekSecond().ts <= renderTs) {
+      this.buffer.shift();
+    }
+
+    if (this.buffer.length() >= 2) {
+      var left = this.buffer.peek();
+      var right = this.buffer.peekSecond();
+      if (left.ts <= renderTs && renderTs <= right.ts) {
+        var x0 = left.x;
+        var x1 = right.x;
+        var y0 = left.y;
+        var y1 = right.y;
+        var t0 = left.ts;
+        var t1 = right.ts;
+
+        this.state.x = x0 + (x1 - x0) * (renderTs - t0) / (t1 - t0);
+        this.state.y = y0 + (y1 - y0) * (renderTs - t0) / (t1 - t0);
+        bombMatrix[this.state.rowId][this.state.colId] = 0;
+        this.state.rowId = getRowID(this.state.y);
+        this.state.colId = getColID(this.state.x);
+        bombMatrix[this.state.rowId][this.state.colId] = this.state.id;
+      }
+    }
   }
 }
 
@@ -547,31 +576,49 @@ function handleMessage(msg) {
         }
       }
 
-      var bbMatrix = intArrayToMatrix(msg.bb);
-      var newBombMatrix = bbMatrix[1];
-      var bombed = false;
+      var blMatrix = intArrayToMatrix(msg.bl);
+      lootMatrix = blMatrix[0];
+      boxMatrix = blMatrix[1];
+
       var waveNumber = Object.keys(wavesClient).length;
 
-      for (var i = 0; i < MAX_ROW; i++) {
-        for (var j = 0; j < MAX_COL; j++) {
-          if (bombMatrix[i][j] && !newBombMatrix[i][j]) {
-            bombed = true;
+      var explode = false;
+      for (var id in bombs) {
+        var inRemote = false;
+        for (var j in msg.b) {
+          inRemote |= id == msg.b[j].id;
+        }
+        if (!inRemote) {
+          explode = true;
+          var b = bombs[id];
+          bombMatrix[b.state.rowId][b.state.colId] = 0;
+          delete bombs[id];
 
-            var waveCenter = new Wave(waveNumber, i, j, 0, 0);
-            waveCenter.ttl = 20;
-            waveCenter.sprites[0].cycleTime = 20;
-            waveCenter.sprites[0].maxCycle = 3;
-            waveCenter.sprites[0].startY = 0;
-            waveCenter.sprites[0].maxStage = 0;
-            waveCenter.sprites[0].sizeDrawX = 72;
-            waveCenter.sprites[0].sizeDrawy = 72;
-            wavesClient[waveNumber++] = waveCenter;
-          }
-          bombMatrix[i][j] = newBombMatrix[i][j];
+          var waveCenter = new Wave(waveNumber, b.state.rowId, b.state.colId, 0, 0);
+          waveCenter.ttl = 20;
+          waveCenter.sprites[0].cycleTime = 20;
+          waveCenter.sprites[0].maxCycle = 3;
+          waveCenter.sprites[0].startY = 0;
+          waveCenter.sprites[0].maxStage = 0;
+          waveCenter.sprites[0].sizeDrawX = 72;
+          waveCenter.sprites[0].sizeDrawy = 72;
+          wavesClient[waveNumber++] = waveCenter;
         }
       }
-      if (bombed) {
+
+      if (explode) {
         Resource.playSnd(types.sound.explode);
+      }
+
+      for (var i in msg.b) {
+        var remoteBomb = msg.b[i];
+        var subState = remoteBomb.s;
+        var id = remoteBomb.id;
+        if (!(id in bombs)) {
+          bombs[id] = new Bomb(id, subState >> 10, subState & 0b1111111111);
+        } else {
+          bombs[id].buffer.push({'ts': bombs[id].frameCtr, 'x': subState >> 10, 'y': subState & 0b1111111111});
+        }
       }
 
       for (var i in msg.w) {
@@ -580,9 +627,6 @@ function handleMessage(msg) {
         wavesClient[waveNumber] = new Wave(
           waveNumber++, subState.rowId, subState.colId, subState.dir, subState.len);
       }
-
-      boxMatrix = bbMatrix[0];
-      lootMatrix = intArray4ToMatrix(msg.l);
     break;
     case types.opcode.pickup_loot:
       Resource.playSnd(types.sound.pickup_loot);
@@ -594,7 +638,6 @@ function handleMessage(msg) {
 var block = new Block(0, 0);
 var stone = new Stone(0, 0);
 var box = new Box(0, -1, -1);
-var bomb = new Bomb(0, -1, -1);
 var loot = new Loot(0, -1, -1, 0);
 
 function initGame() {
@@ -628,7 +671,6 @@ function initGame() {
     }
 
     update(delta);
-    bomb.update(delta);
     for (var i in players) { players[i].update(delta); }
     for (var i in wavesClient) { wavesClient[i].update(delta); }
     render(delta);
@@ -658,7 +700,8 @@ function render(delta) {
         stone.render(0, renderX, renderY);
       }
       if (bombMatrix[i][j]) {
-        bomb.render(0, renderX, renderY);
+        var b = bombs[bombMatrix[i][j]];
+        bombs[bombMatrix[i][j]].render(0, b.state.x - (UNIT >> 1), b.state.y - (UNIT >> 1));
       }
       if (lootMatrix[i][j]) {
         renderY -= loot.sprite.sizeDrawY >> 1;

@@ -310,58 +310,47 @@ class PlayerState extends EntityState {
 
   move(delta, dir, isServer) {
     this.dir = dir;
-    var toX = this.x;
-    var toY = this.y;
     var diff = this.speed * delta / 100;
     var edge = this.size >> 1;
-
-    switch(dir) {
-    case types.dir.up:
-      toY = Math.max(0, this.y - edge - diff);
-      break;
-    case types.dir.right:
-      toX = Math.min(WIDTH, this.x + edge + diff);
-      break;
-    case types.dir.down:
-      toY = Math.min(HEIGHT, this.y + edge + diff);
-      break;
-    case types.dir.left:
-      toX = Math.max(0, this.x - edge - diff);
-      break;
-    }
-
-    toX = Math.round(toX);
-    toY = Math.round(toY);
-
+    var to = [[],
+      [this.x, this.y - edge - diff],
+      [this.x + edge + diff, this.y],
+      [this.x, this.y + edge + diff],
+      [this.x - edge - diff, this.y],
+    ];
+    var toX = Math.round(to[dir][0]);
+    var toY = Math.round(to[dir][1]);
     var toColId = getColID(toX);
     var toRowId = getRowID(toY);
+
+    var adjust = [[], [0, edge], [-edge, 0], [0, -edge], [edge, 0],];
+    toX += adjust[dir][0];
+    toY += adjust[dir][1];
+
     if (!bind(toRowId, toColId)) {
       return;
     }
     if ((toRowId != this.rowId || toColId != this.colId) &&
         (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId] || stoneMatrix[toRowId][toColId])) {
-      return;
-    }
+      if (!isServer) {
+        return;
+      }
 
-    switch(dir) {
-    case types.dir.up:
-      toY += edge;
-      break;
-    case types.dir.right:
-      toX -= edge;
-      break;
-    case types.dir.down:
-      toY -= edge;
-      break;
-    case types.dir.left:
-      toX += edge;
-      break;
+      var bombId = bombMatrix[toRowId][toColId];
+      if (bombId) {
+        var bomb = bombs[bombId];
+        bomb.previousPushCtr = bomb.pushCtr++;
+        if (bomb.pushCtr > SERVER_FRAME) {
+          bomb.push(dir);
+        }
+      }
+      return;
     }
 
     this.x = toX;
     this.y = toY;
-    this.rowId = getRowID(toY);
-    this.colId = getColID(toX);
+    this.rowId = getRowID(this.y);
+    this.colId = getColID(this.x);
 
     if (!isServer) {
       return;
@@ -405,7 +394,7 @@ class PlayerState extends EntityState {
     this.currentBombNumber++;
 
     var id = getID();
-    bombs[id] = new BombState(id, this.x, this.y, this.power, this.id);
+    bombs[id] = new BombState(id, this.x, this.y, this.power, this.id, UNIT);
     bombs[id].doChain();
   }
 
@@ -463,8 +452,10 @@ var playerMatrix;
 //  炸弹核心
 // =============================================================================
 class BombState extends EntityState {
-  constructor(id, x, y, power, owner) {
+  constructor(id, x, y, power, owner, size) {
     super(id, x, y);
+    this.x = this.colId * UNIT + (UNIT >> 1);
+    this.y = this.rowId * UNIT + (UNIT >> 1);
     this.chain = [];
     this.power = power;
     this.putTime = 0;
@@ -473,10 +464,32 @@ class BombState extends EntityState {
     if (x != -1) {
       bombMatrix[this.rowId][this.colId] = id;
     }
+    this.previousPushCtr = 0;
+    this.pushCtr = 0;
+    this.dir = 0;
+    this.speed = UNIT;
+    this.size = size;
   }
 
   blocked(rowId, colId) {
     return bind(rowId, colId) && (boxMatrix[rowId][colId] || stoneMatrix[rowId][colId]);
+  }
+
+  push(dir) {
+    var check = [[], [-1, 0], [0, 1], [1, 0], [0, -1],];
+    var checkRowId = this.rowId + check[dir][0];
+    var checkColId = this.colId + check[dir][1];
+
+    if (!bind(checkRowId, checkColId) || bombMatrix[checkRowId][checkColId] || this.blocked(checkRowId, checkColId)) {
+      return;
+    }
+
+    this.dir = dir;
+    for (var bombId in this.chain) {
+      delete bombs[bombId].chain[this.id];
+    }
+    this.chain = [];
+    bombMatrix[this.rowId][this.colId] = 0;
   }
 
   doBomb() {
@@ -584,10 +597,47 @@ class BombState extends EntityState {
   }
 
   update(delta) {
-    if (this.putTime++ == this.ttl) {
+    if (!this.dir && this.putTime++ == this.ttl) {
       bombsVisited = {};
       this.chainBomb(this);
     }
+
+    if (this.pushCtr == this.previousPushCtr) { // 重置
+      this.pushCtr = 0;
+    }
+
+    if (!this.dir) {
+      return;
+    }
+
+    var diff = this.speed * delta / 100;
+    var edge = this.size >> 1;
+    var to = [[],
+      [this.x, this.y - diff],
+      [this.x + diff, this.y],
+      [this.x, this.y + diff],
+      [this.x - diff, this.y],
+    ];
+    var toX = Math.round(to[this.dir][0]);
+    var toY = Math.round(to[this.dir][1]);
+    var toColId = getColID(toX);
+    var toRowId = getRowID(toY);
+
+    if (!bind(toRowId, toColId) ||
+        ((toRowId != this.rowId || toColId != this.colId) &&
+        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId] || stoneMatrix[toRowId][toColId]))) {
+      // re-chain, reset put time, remove from moving bomb, reset dir
+      this.doChain();
+      this.putTime = 0;
+      this.dir = 0;
+      bombMatrix[this.rowId][this.colId] = this.id;
+      return;
+    }
+
+    this.rowId = getRowID(toY);
+    this.colId = getColID(toX);
+    this.x = toX;
+    this.y = toY;
   }
 }
 bombs = {};
@@ -687,16 +737,19 @@ function releaseID(id) {
   idQueue.push(id);
 }
 
-function matrixToIntArray(m1, m2) {
+function matrixToIntArray(m1, m2, objects) {
   var array = [];
 
   for (var i = 0; i < MAX_ROW; i++) {
     var rowMask = 0;
+    var d = 1;
+    for (var j = 0; j < MAX_COL; j++) {
+      rowMask += d * (m2[i][j] ? objects[m2[i][j]].type : 0);
+      d *= 4;
+    }
+    rowMask <<= MAX_COL;
     for (var j = 0; j < MAX_COL; j++) {
       rowMask |= (m1[i][j] > 0) << j;
-    }
-    for (var j = 0; j < MAX_COL; j++) {
-      rowMask |= (m2[i][j] > 0) << MAX_COL + j;
     }
     array.push(rowMask);
   }
@@ -714,48 +767,19 @@ function intArrayToMatrix(array) {
       m2[i][j] = array[i] >> j & 1;
     }
     m1[i] = {};
-    for (var j = 0; j < MAX_COL; j++) {
-      m1[i][j] = array[i] >> j + MAX_COL & 1;
+    var j = 0;
+    array[i] >>= MAX_COL;
+    while (array[i]) {
+      m1[i][j++] = array[i] % 4;
+      array[i] = Math.floor(array[i] / 4);
+    }
+    while (j < MAX_COL) {
+      m1[i][j++] = 0;
     }
   }
 
   return [m1, m2];
 }
-
-function matrixToIntArray4(matrix, objects) {
-  var array = [];
-
-  for (var i = 0; i < MAX_ROW; i++) {
-    var rowMask = 0;
-    var d = 1;
-    for (var j = 0; j < MAX_COL; j++) {
-      rowMask += d * (matrix[i][j] ? objects[matrix[i][j]].type : 0);
-      d *= 4;
-    }
-    array.push(rowMask);
-  }
-
-  return array;
-}
-
-function intArray4ToMatrix(array) {
-  var matrix = {};
-
-  for (var i = 0; i < MAX_ROW; i++) {
-    matrix[i] = {};
-    var j = 0;
-    while (array[i]) {
-      matrix[i][j++] = array[i] % 4;
-      array[i] = Math.floor(array[i] / 4);
-    }
-    while (j < MAX_COL) {
-      matrix[i][j++] = 0;
-    }
-  }
-
-  return matrix;
-}
-
 
 function clearMatrix(obj) {
   var matrix = new Array(MAX_ROW);
@@ -885,13 +909,21 @@ function broadcastState() {
   }
   wavesToBroadcast = [];
 
+  var bombStates = [];
+  for (var id in bombs) {
+    bombStates.push({
+      id: id,
+      s: bombs[id].x << 10 | bombs[id].y,
+    })
+  }
+
   for (var id in players) {
     clients[id].volatile.emit('opcode', {
       o: types.opcode.move,
       p: playerStates,
-      bb: matrixToIntArray(bombMatrix, boxMatrix),
+      bl: matrixToIntArray(boxMatrix, lootMatrix, loots),
       w: waveStates,
-      l: matrixToIntArray4(lootMatrix, loots),
+      b: bombStates,
     });
   }
 }
@@ -942,7 +974,6 @@ function serverUpdate(delta, callback) {
   }
 
   // 更新其他
-  for (var i in bombs) { bombs[i].update(delta); }
   for (var i in waves) { waves[i].update(delta); }
 
   for (var id in toDestroyBoxes) {
@@ -976,6 +1007,7 @@ function update(delta) {
     var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
     playerMatrix[rowId][colId][id] = 1;
   }
+  for (var i in bombs) { bombs[i].update(delta); }
 }
 
 playerSpawns = [
