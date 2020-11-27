@@ -53,7 +53,10 @@ Resource.getPng = function(key) {
 
 Resource.playSnd = function(key) {
   Resource.sndMap[key].currentTime = 0;
-  Resource.sndMap[key].play();
+  var promise = Resource.sndMap[key].play();
+  if (promise != undefined) {
+    promise.then(_ => {}).catch(error => {});
+  }
 };
 
 Resource.pauseSnd = function(key) {
@@ -586,7 +589,7 @@ function handleMessage(msg) {
       for (var id in bombs) {
         var inRemote = false;
         for (var j in msg.b) {
-          inRemote |= id == msg.b[j].id;
+          inRemote |= (id == msg.b[j].id);
         }
         if (!inRemote) {
           explode = true;

@@ -640,8 +640,8 @@ class BombState extends EntityState {
       return;
     }
 
-    this.rowId = getRowID(toY);
-    this.colId = getColID(toX);
+    this.rowId = toRowId;
+    this.colId = toColId;
     this.x = toX;
     this.y = toY;
   }
