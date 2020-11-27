@@ -238,6 +238,7 @@ class EntityState {
 class BoxState extends EntityState {
   constructor(id, x, y) {
     super(id, x, y);
+    this.type = 1;
     if (x != -1) {
       boxMatrix[this.rowId][this.colId] = this.id;
     }
@@ -743,19 +744,15 @@ function releaseID(id) {
   idQueue.push(id);
 }
 
-function matrixToIntArray(m1, m2, objects) {
+function matrixToIntArray(m, objects) {
   var array = [];
 
   for (var i = 0; i < MAX_ROW; i++) {
     var rowMask = 0;
     var d = 1;
     for (var j = 0; j < MAX_COL; j++) {
-      rowMask += d * (m2[i][j] ? objects[m2[i][j]].type : 0);
+      rowMask += d * (m[i][j] ? objects[m[i][j]].type : 0);
       d *= 4;
-    }
-    rowMask <<= MAX_COL;
-    for (var j = 0; j < MAX_COL; j++) {
-      rowMask |= (m1[i][j] > 0) << j;
     }
     array.push(rowMask);
   }
@@ -764,27 +761,21 @@ function matrixToIntArray(m1, m2, objects) {
 }
 
 function intArrayToMatrix(array) {
-  var m1 = {};
-  var m2 = {};
+  var ret = {};
 
   for (var i = 0; i < MAX_ROW; i++) {
-    m2[i] = {};
-    for (var j = 0; j < MAX_COL; j++) {
-      m2[i][j] = array[i] >> j & 1;
-    }
-    m1[i] = {};
+    ret[i] = {};
     var j = 0;
-    array[i] >>= MAX_COL;
     while (array[i]) {
-      m1[i][j++] = array[i] % 4;
+      ret[i][j++] = array[i] % 4;
       array[i] = Math.floor(array[i] / 4);
     }
     while (j < MAX_COL) {
-      m1[i][j++] = 0;
+      ret[i][j++] = 0;
     }
   }
 
-  return [m1, m2];
+  return ret;
 }
 
 function clearMatrix(obj) {
@@ -927,9 +918,10 @@ function broadcastState() {
     clients[id].volatile.emit('opcode', {
       o: types.opcode.move,
       p: playerStates,
-      bl: matrixToIntArray(boxMatrix, lootMatrix, loots),
       w: waveStates,
       b: bombStates,
+      l: matrixToIntArray(lootMatrix, loots),
+      bo: matrixToIntArray(boxMatrix, boxes),
     });
   }
 }

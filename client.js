@@ -579,9 +579,8 @@ function handleMessage(msg) {
         }
       }
 
-      var blMatrix = intArrayToMatrix(msg.bl);
-      lootMatrix = blMatrix[0];
-      boxMatrix = blMatrix[1];
+      lootMatrix = intArrayToMatrix(msg.l);
+      boxMatrix = intArrayToMatrix(msg.bo);
 
       var waveNumber = Object.keys(wavesClient).length;
 
