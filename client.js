@@ -89,6 +89,7 @@ class Sprite {
     this.stageCycles = [];
     this.frameVector = [];
     this.type = type;
+    this.oneTime = false;
   }
 
   render(delta, positionX, positionY) {
@@ -98,6 +99,9 @@ class Sprite {
   }
 
   renderWith(delta, positionX, positionY, startX, startY) {
+    if (this.oneTime && this.currCycle + 1 == this.maxCycle && this.currStage + 1 == this.maxStage) {
+      return;
+    }
     ctx.drawImage(
       Resource.getPng(this.type),
       // 图片起画点
@@ -369,7 +373,7 @@ class Wave extends Entity {
     this.len = len;
     this.sprites = [];
     this.createTime = 0;
-    this.ttl = FRAME_RATE >> 1; // 0.5秒
+    this.ttl = FRAME_RATE; // 1秒
     this.spreadTime = 2;
 
     var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
@@ -381,6 +385,7 @@ class Wave extends Entity {
     sprite.stageTime = 300;
     sprite.maxStage = 2;
     sprite.stageCycles = [sprite.maxCycle, 9];
+    sprite.oneTime = true;
     this.sprites.push(sprite);
 
     var directions = [ // [[step_i, step_j]]
@@ -396,17 +401,19 @@ class Wave extends Entity {
     this.createTime++;
     if (this.createTime % this.spreadTime == 0) {
       var n = this.sprites.length;
-      if (n < this.len) {
+      var ctr = 0;
+      while (ctr++ < 2 && n < this.len) {
         var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
         sprite.cycleTime = 20;
         sprite.maxCycle = 2;
-        var previous = this.sprites[n - 1];
+        var previous = this.sprites[n++ - 1];
         sprite.i = previous.i + this.direction[0];
         sprite.j = previous.j + this.direction[1];
         sprite.startY = 61;
         sprite.stageTime = 300;
         sprite.maxStage = 2;
         sprite.stageCycles = [sprite.maxCycle, 9];
+        sprite.oneTime = true;
         this.sprites.push(sprite);
       }
     }

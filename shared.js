@@ -468,7 +468,7 @@ class BombState extends EntityState {
     this.previousPushCtr = 0;
     this.pushCtr = 0;
     this.dir = 0;
-    this.speed = UNIT;
+    this.speed = UNIT + UNIT >> 1;
     this.size = size;
   }
 
