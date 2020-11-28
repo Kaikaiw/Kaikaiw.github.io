@@ -374,7 +374,6 @@ class Wave extends Entity {
     this.sprites = [];
     this.createTime = 0;
     this.ttl = FRAME_RATE; // 1秒
-    this.spreadTime = 2;
 
     var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
     sprite.cycleTime = 20;
@@ -399,23 +398,20 @@ class Wave extends Entity {
 
   update(delta) {
     this.createTime++;
-    if (this.createTime % this.spreadTime == 0) {
-      var n = this.sprites.length;
-      var ctr = 0;
-      while (ctr++ < 2 && n < this.len) {
-        var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
-        sprite.cycleTime = 20;
-        sprite.maxCycle = 2;
-        var previous = this.sprites[n++ - 1];
-        sprite.i = previous.i + this.direction[0];
-        sprite.j = previous.j + this.direction[1];
-        sprite.startY = 61;
-        sprite.stageTime = 300;
-        sprite.maxStage = 2;
-        sprite.stageCycles = [sprite.maxCycle, 9];
-        sprite.oneTime = true;
-        this.sprites.push(sprite);
-      }
+    var n = this.sprites.length;
+    if (n < this.len) {
+      var sprite = new Sprite(types.entity.wave, 61, 61, UNIT, UNIT);
+      sprite.cycleTime = 20;
+      sprite.maxCycle = 2;
+      var previous = this.sprites[n - 1];
+      sprite.i = previous.i + this.direction[0];
+      sprite.j = previous.j + this.direction[1];
+      sprite.startY = 61;
+      sprite.stageTime = 300;
+      sprite.maxStage = 2;
+      sprite.stageCycles = [sprite.maxCycle, 9];
+      sprite.oneTime = true;
+      this.sprites.push(sprite);
     }
 
     for (var i in this.sprites) {
