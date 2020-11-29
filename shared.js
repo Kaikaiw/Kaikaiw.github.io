@@ -271,12 +271,10 @@ class PlayerState extends EntityState {
     this.currentBombNumber = 0;
     this.maxBombNumber = 1;
     this.maxMaxBombNumber = 8;
-    this.buffer = new Queue(FRAME_RATE); // 插值玩家状态
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
     this.msgQueue = new Queue(FRAME_RATE);
     this.playerNum = playerNum;
-    this.frameCtr = 0;
   }
 
   downPlayer() {
@@ -397,32 +395,6 @@ class PlayerState extends EntityState {
     var id = getID();
     bombs[id] = new BombState(id, this.x, this.y, this.power, this.id, UNIT);
     bombs[id].doChain();
-  }
-
-  update(delta) {
-    var renderTs = this.frameCtr++ - FRAME_RATE / SERVER_FRAME;
-
-    while (this.buffer.length() >= 2 && this.buffer.peekSecond().ts <= renderTs) {
-      this.buffer.shift();
-    }
-
-    if (this.buffer.length() >= 2) {
-      var left = this.buffer.peek();
-      var right = this.buffer.peekSecond();
-      if (left.ts <= renderTs && renderTs <= right.ts) {
-        var x0 = left.x;
-        var x1 = right.x;
-        var y0 = left.y;
-        var y1 = right.y;
-        var t0 = left.ts;
-        var t1 = right.ts;
-
-        this.x = x0 + (x1 - x0) * (renderTs - t0) / (t1 - t0);
-        this.y = y0 + (y1 - y0) * (renderTs - t0) / (t1 - t0);
-        this.rowId = getRowID(this.y);
-        this.colId = getColID(this.x);
-      }
-    }
   }
 
   applyInput(input, isServer) {

@@ -152,6 +152,8 @@ class Entity {
   constructor() {
     this.sprite = null;
     this.state = null;
+    this.frameCtr = 0;
+    this.buffer = new Queue(FRAME_RATE); // 插值玩家状态
   }
 
   render(delta, x, y)  {
@@ -162,10 +164,40 @@ class Entity {
     this.sprite.renderWith(delta, x, y, startX, startY);
   }
 
-  update(delta) {
+  update(delta, transit) {
     this.sprite.update(delta);
-    if (this.state) {
+    if (typeof transit == 'undefined' && this.state) {
       this.state.update(delta);
+    }
+
+    var renderTs = this.frameCtr++ - FRAME_RATE / SERVER_FRAME;
+    while (this.buffer.length() >= 2 && this.buffer.peekSecond().ts <= renderTs) {
+      this.buffer.shift();
+    }
+
+    if (this.buffer.length() >= 2) {
+      var left = this.buffer.peek();
+      var right = this.buffer.peekSecond();
+      if (left.ts <= renderTs && renderTs <= right.ts) {
+        var x0 = left.x;
+        var x1 = right.x;
+        var y0 = left.y;
+        var y1 = right.y;
+        var t0 = left.ts;
+        var t1 = right.ts;
+
+        this.state.x = x0 + (x1 - x0) * (renderTs - t0) / (t1 - t0);
+        this.state.y = y0 + (y1 - y0) * (renderTs - t0) / (t1 - t0);
+
+        var oldRowId = this.state.rowId;
+        var oldColId = this.state.colId;
+        this.state.rowId = getRowID(this.state.y);
+        this.state.colId = getColID(this.state.x);
+
+        if (typeof transit != 'undefined') {
+          transit(oldRowId, oldColId, this.state.rowId, this.state.colId);
+        }
+      }
     }
   }
 }
@@ -320,7 +352,7 @@ class Bomb extends Entity {
     super();
     // 魔法数字...
     this.sprite = new Sprite(types.entity.bomb, 64, 64, 88, 88);
-    this.sprite.cycleTime = 150;
+    this.sprite.cycleTime = 400;
     this.sprite.maxCycle = 3;
     this.state = new BombState(id, x, y, 0, 0, UNIT);
     this.buffer = new Queue(FRAME_RATE);
@@ -329,32 +361,10 @@ class Bomb extends Entity {
 
   update(delta) {
     this.sprite.update(delta);
-
-    var renderTs = this.frameCtr++ - FRAME_RATE / SERVER_FRAME;
-
-    while (this.buffer.length() >= 2 && this.buffer.peekSecond().ts <= renderTs) {
-      this.buffer.shift();
-    }
-
-    if (this.buffer.length() >= 2) {
-      var left = this.buffer.peek();
-      var right = this.buffer.peekSecond();
-      if (left.ts <= renderTs && renderTs <= right.ts) {
-        var x0 = left.x;
-        var x1 = right.x;
-        var y0 = left.y;
-        var y1 = right.y;
-        var t0 = left.ts;
-        var t1 = right.ts;
-
-        this.state.x = x0 + (x1 - x0) * (renderTs - t0) / (t1 - t0);
-        this.state.y = y0 + (y1 - y0) * (renderTs - t0) / (t1 - t0);
-        bombMatrix[this.state.rowId][this.state.colId] = 0;
-        this.state.rowId = getRowID(this.state.y);
-        this.state.colId = getColID(this.state.x);
-        bombMatrix[this.state.rowId][this.state.colId] = this.state.id;
-      }
-    }
+    super.update(delta, (oldRowId, oldColId, newRowId, newColId) => {
+        bombMatrix[oldRowId][oldColId] = 0;
+        bombMatrix[newRowId][newColId] = this.state.id;
+    });
   }
 }
 
@@ -568,7 +578,7 @@ function handleMessage(msg) {
           });
         } else {
           player.state.dir = subState.dir;
-          player.state.buffer.push({'ts': player.state.frameCtr, 'x': subState.x, 'y': subState.y,});
+          player.buffer.push({'ts': player.frameCtr, 'x': subState.x, 'y': subState.y,});
         }
 
         player.state.score = subState.score;
