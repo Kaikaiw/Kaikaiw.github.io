@@ -18,7 +18,7 @@ function init() {
   // 网络
   var io = require('socket.io')(process.env.PORT, {
     cors: {
-      origin: 'http://' + URL,
+      origin: URL,
       methods: ['GET', 'POST'],
       credentials: true
     }

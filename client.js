@@ -501,7 +501,7 @@ function init() {
   initGame();
 
   // websocket
-  var socket = io('ws://' + URL + ':' + process.env.PORT, {
+  var socket = io('ws://node-pop.herokuapp.com', {
     withCredentials: true,
   });
   socket.on('opcode', function(msg) {
