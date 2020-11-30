@@ -16,7 +16,7 @@ function initGame() {
 function init() {
   initGame();
   // 网络
-  var io = require('socket.io')(8081, {
+  var io = require('socket.io')(process.env.PORT, {
     cors: {
       origin: 'http://' + URL,
       methods: ['GET', 'POST'],
