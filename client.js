@@ -308,25 +308,22 @@ class Player extends Entity {
 
     var input = {};
     if (keyPressed[types.key.up]) {
-      input.key = types.key.up;
+      input.key = types.key.up << 1;
     } else if (keyPressed[types.key.right]) {
-      input.key = types.key.right;
+      input.key = types.key.right << 1;
     } else if (keyPressed[types.key.down]) {
-      input.key = types.key.down;
+      input.key = types.key.down << 1;
     } else if (keyPressed[types.key.left]) {
-      input.key = types.key.left;
+      input.key = types.key.left << 1;
     }
 
     var shouldProcessSpace = !this.spacePressed && keyPressed[types.key.space];
     this.spacePressed = keyPressed[types.key.space];
-    if (!this.state.downed &&
-      shouldProcessSpace &&
-      this.state.currentBombNumber < this.state.maxBombNumber) {
-      server.volatile.emit('opcode', {o: types.opcode.put_bomb,});
-      Resource.playSnd(types.sound.put_bomb);
+    if (!this.state.downed && shouldProcessSpace) {
+      input.key = 'key' in input ? input.key | 1 : 1;
     }
 
-    if (Object.keys(input).length && !shouldProcessSpace) {
+    if ('key' in input) {
       input.seqId = inputSeqId++;
       server.volatile.emit('opcode', {o: types.opcode.move, i: input},);
       var localInput = Object.assign({}, input);
@@ -576,6 +573,10 @@ function handleMessage(msg) {
           pendingInputs.iterate((pendingInput) => {
             player.applyInput(pendingInput);
           });
+
+          if (subState.justPut) {
+            Resource.playSnd(types.sound.put_bomb);
+          }
         } else {
           player.state.dir = subState.dir;
           player.buffer.push({'ts': player.frameCtr, 'x': subState.x, 'y': subState.y,});

@@ -55,7 +55,6 @@ types = {
   },
   // 操作代码
   opcode: {
-    put_bomb:          2,
     explode:           4,
     pickup_loot:       9,
     move:             14,
@@ -275,6 +274,7 @@ class PlayerState extends EntityState {
     this.score = 0;
     this.msgQueue = new Queue(FRAME_RATE);
     this.playerNum = playerNum;
+    this.justPut = false;
   }
 
   downPlayer() {
@@ -391,6 +391,7 @@ class PlayerState extends EntityState {
       return;
     }
     this.currentBombNumber++;
+    this.justPut = true;
 
     var id = getID();
     bombs[id] = new BombState(id, this.x, this.y, this.power, this.id, UNIT);
@@ -399,7 +400,7 @@ class PlayerState extends EntityState {
 
   applyInput(input, isServer) {
     this.ackSeqId = input.seqId;
-    var key = input.key;
+    var key = input.key >> 1;
     var delta = input.delta;
 
     switch (key) {
@@ -801,21 +802,20 @@ function handleClientMessage(msg, player) {
   switch (msg.o) {
   case types.opcode.move:
     msg.i.delta = 1000.0 / FRAME_RATE;
+    if (msg.i.key & 1) {
+      player.putBomb();
+    }
     player.applyInput(msg.i, true);
-  break;
-  case types.opcode.put_bomb:
-    player.putBomb();
   break;
   }
 }
 
 function playerStateToInt(state) {
   var r1 = state.dir;
-  r1 = r1 << 4 | state.currentBombNumber;
-  r1 = r1 << 4 | state.maxBombNumber;
   r1 = r1 << 1 | state.downed;
   r1 = r1 << 4 | state.score;
   r1 = r1 << 2 | state.playerNum;
+  r1 = r1 << 1 | state.justPut;
 
   var r2 = state.x;
   r2 = r2 << 10 | state.y;
@@ -832,11 +832,10 @@ function intToPlayerState(state) {
   ret.y = s2 & 0b1111111111; s2 >>= 10;
   ret.x = s2;
 
+  ret.justPut = s1 & 0b1; s1 >>= 1;
   ret.playerNum = s1 & 0b11; s1 >>= 2;
   ret.score = s1 & 0b1111; s1 >>= 4;
   ret.downed = s1 & 0b1; s1 >>= 1;
-  ret.maxBombNumber = s1 & 0b1111; s1 >>= 4;
-  ret.currentBombNumber = s1 & 0b1111; s1 >>= 4;
   ret.dir = s1;
   return ret;
 }
@@ -867,6 +866,7 @@ function broadcastState() {
       aid: p.ackSeqId,
       s: playerStateToInt(p),
     });
+    p.justPut = false;
   }
 
   var waveStates = [];
@@ -920,7 +920,7 @@ function serverUpdate(delta, callback) {
     var player = players[id];
     var queue = player.msgQueue;
     var ctr = 0;
-    while (ctr < FRAME_RATE / SERVER_FRAME && !queue.empty()) {
+    while (ctr <= FRAME_RATE / SERVER_FRAME && !queue.empty()) {
       ctr++;
       handleClientMessage(queue.shift(), player);
     }
