@@ -18,7 +18,7 @@ function init() {
   // 网络
   var io = require('socket.io')(8081, {
     cors: {
-      origin: 'http://' + URL,
+      origin: 'http://' + URL + ':8000',
       methods: ['GET', 'POST'],
       credentials: true
     }
