@@ -515,7 +515,7 @@ class BombState extends EntityState {
           }
         }
 
-        waveMatrix[i][j]++;
+        waveMatrix[i][j] = 1;
         i += d[5];
         j += d[6];
         len++;
@@ -652,7 +652,7 @@ class WaveState extends EntityState {
 
       var d = directions[this.dir - 1];
       for (var i = this.rowId, j = this.colId; (d[0] ? i > d[1] && j > d[2] : i < d[1] && j < d[2]);) {
-        waveMatrix[i][j]--;
+        waveMatrix[i][j] = 0;
         i += d[3];
         j += d[4];
       }
