@@ -264,7 +264,7 @@ class PlayerState extends EntityState {
     this.downedFrame = 0;
     this.stackedSpeed = 0;
     this.speed = 15;
-    this.maxSpeed = 30;
+    this.maxSpeed = 36;
     this.power = 1;
     this.maxPower = 8;
     this.currentBombNumber = 0;
