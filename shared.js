@@ -957,7 +957,7 @@ function serverUpdate(delta, callback) {
 
   for (var id in toDestroyBoxes) {
     var rand = getRandomInt(100);
-    if (rand <= 30) { // 30%掉强化
+    if (rand <= 50) { // 50%掉强化
       var lootId = getID();
       var x = boxes[id].x;
       var y = boxes[id].y;
