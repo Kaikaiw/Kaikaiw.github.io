@@ -1027,13 +1027,10 @@ function disconnectPlayer(id) {
 // =============================================================================
 //  SERVER EXPORTS
 // =============================================================================
-E.MAX_ID = MAX_ID;
 E.init = init;
 E.update = update;
 E.spawnPlayer = spawnPlayer;
 E.recvMessage = recvMessage;
 E.serverUpdate = serverUpdate;
-E.SERVER_FRAME = SERVER_FRAME;
 E.prepID = prepID;
 E.disconnectPlayer = disconnectPlayer;
-E.URL = URL

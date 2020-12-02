@@ -4,9 +4,9 @@ var E = require('./shared.js');
 //  服务端
 // =============================================================================
 function initGame() {
-  E.prepID(E.MAX_ID);
+  E.prepID(MAX_ID);
   E.init();
-  var delta = 1000.0 / E.SERVER_FRAME;
+  var delta = 1000.0 / SERVER_FRAME;
   setInterval(function () {
      E.serverUpdate(delta);
      E.update(delta);
