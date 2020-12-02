@@ -273,6 +273,7 @@ class PlayerState extends EntityState {
     this.ackSeqId = 0; // 重建序列ID
     this.score = 0;
     this.msgQueue = new Queue(FRAME_RATE);
+    this.lastCtr = 0;
     this.playerNum = playerNum;
     this.justPut = false;
   }
@@ -920,10 +921,11 @@ function serverUpdate(delta, callback) {
     var player = players[id];
     var queue = player.msgQueue;
     var ctr = 0;
-    while (ctr <= FRAME_RATE / SERVER_FRAME && !queue.empty()) {
+    while (player.lastCtr + ctr < FRAME_RATE / SERVER_FRAME << 1 && !queue.empty()) {
       ctr++;
       handleClientMessage(queue.shift(), player);
     }
+    player.lastCtr = ctr;
   }
 
   var shouldRestart = false;
