@@ -264,7 +264,7 @@ class PlayerState extends EntityState {
     this.downedFrame = 0;
     this.stackedSpeed = 0;
     this.speed = 15;
-    this.maxSpeed = 36;
+    this.maxSpeed = 30;
     this.power = 1;
     this.maxPower = 8;
     this.currentBombNumber = 0;
@@ -339,7 +339,7 @@ class PlayerState extends EntityState {
       if (bombId) {
         var bomb = bombs[bombId];
         bomb.previousPushCtr = bomb.pushCtr++;
-        if (bomb.pushCtr > SERVER_FRAME) {
+        if (bomb.pushCtr >= SERVER_FRAME) {
           bomb.push(dir);
         }
       }
