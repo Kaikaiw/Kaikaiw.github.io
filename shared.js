@@ -55,8 +55,6 @@ types = {
   },
   // 操作代码
   opcode: {
-    explode:           4,
-    pickup_loot:       9,
     move:             14,
     new_player:       17,
     new_map:          18,
@@ -276,6 +274,7 @@ class PlayerState extends EntityState {
     this.lastCtr = 0;
     this.playerNum = playerNum;
     this.justPut = false;
+    this.justPick = false;
   }
 
   downPlayer() {
@@ -295,6 +294,7 @@ class PlayerState extends EntityState {
   }
 
   pickupLoot(type) {
+    this.justPick = true;
     switch(type) {
       case types.loot.speed:
         this.speed = Math.min(this.maxSpeed, this.speed + 2);
@@ -374,7 +374,6 @@ class PlayerState extends EntityState {
     if (lootId) {
       this.pickupLoot(loots[lootId].type);
       remove(loots, lootId, lootMatrix)
-      clients[this.id].volatile.emit('opcode', {o: types.opcode.pickup_loot,});
     }
   }
 
@@ -817,6 +816,7 @@ function playerStateToInt(state) {
   r1 = r1 << 4 | state.score;
   r1 = r1 << 2 | state.playerNum;
   r1 = r1 << 1 | state.justPut;
+  r1 = r1 << 1 | state.justPick;
 
   var r2 = state.x;
   r2 = r2 << 10 | state.y;
@@ -833,6 +833,7 @@ function intToPlayerState(state) {
   ret.y = s2 & 0b1111111111; s2 >>= 10;
   ret.x = s2;
 
+  ret.justPick = s1 & 0b1; s1 >>= 1;
   ret.justPut = s1 & 0b1; s1 >>= 1;
   ret.playerNum = s1 & 0b11; s1 >>= 2;
   ret.score = s1 & 0b1111; s1 >>= 4;
@@ -868,6 +869,7 @@ function broadcastState() {
       s: playerStateToInt(p),
     });
     p.justPut = false;
+    p.justPick = false;
   }
 
   var waveStates = [];

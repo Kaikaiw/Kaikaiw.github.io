@@ -577,6 +577,9 @@ function handleMessage(msg) {
           if (subState.justPut) {
             Resource.playSnd(types.sound.put_bomb);
           }
+          if (subState.justPick) {
+            Resource.playSnd(types.sound.pickup_loot);
+          }
         } else {
           player.state.dir = subState.dir;
           player.buffer.push({'ts': player.frameCtr, 'x': subState.x, 'y': subState.y,});
@@ -643,9 +646,6 @@ function handleMessage(msg) {
         wavesClient[waveNumber] = new Wave(
           waveNumber++, subState.rowId, subState.colId, subState.dir, subState.len);
       }
-    break;
-    case types.opcode.pickup_loot:
-      Resource.playSnd(types.sound.pickup_loot);
     break;
   }
 }
