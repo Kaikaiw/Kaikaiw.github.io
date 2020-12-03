@@ -922,7 +922,8 @@ function serverUpdate(delta, callback) {
     var player = players[id];
     var queue = player.msgQueue;
     var ctr = 0;
-    while (ctr <= FRAME_RATE / SERVER_FRAME && !queue.empty()) {
+    var extra = !queue.empty();
+    while (ctr < (FRAME_RATE / SERVER_FRAME + extra) && !queue.empty()) {
       ctr++;
       handleClientMessage(queue.shift(), player);
     }
