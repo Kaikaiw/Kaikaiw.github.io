@@ -387,7 +387,7 @@ class Wave extends Entity {
     sprite.i = rowId;
     sprite.j = colId;
     sprite.startY = 61;
-    sprite.stageTime = 300;
+    sprite.stageTime = 500;
     sprite.maxStage = 2;
     sprite.stageCycles = [sprite.maxCycle, 9];
     sprite.oneTime = true;
@@ -413,7 +413,7 @@ class Wave extends Entity {
       sprite.i = previous.i + this.direction[0];
       sprite.j = previous.j + this.direction[1];
       sprite.startY = 61;
-      sprite.stageTime = 300;
+      sprite.stageTime = 500;
       sprite.maxStage = 2;
       sprite.stageCycles = [sprite.maxCycle, 9];
       sprite.oneTime = true;
