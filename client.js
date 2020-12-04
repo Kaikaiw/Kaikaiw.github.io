@@ -353,7 +353,6 @@ class Bomb extends Entity {
     this.sprite.maxCycle = 3;
     this.state = new BombState(id, x, y, 0, 0, UNIT);
     this.buffer = new Queue(FRAME_RATE);
-    this.frameCtr = 0;
   }
 
   update(delta) {
@@ -680,7 +679,7 @@ function initGame() {
   playerMatrix = clearMatrix({});
 
   // 开始游戏
-  var delta = 1000.0 / FRAME_RATE;
+  var delta = 1000 / FRAME_RATE;
   setInterval(function () {
     while (!msgQueue.empty()) {
       handleMessage(msgQueue.shift());
