@@ -680,7 +680,8 @@ function initGame() {
 
   // 开始游戏
   var delta = 1000 / FRAME_RATE;
-  setInterval(function () {
+  var loop = function () {
+    setTimeout(loop, delta);
     while (!msgQueue.empty()) {
       handleMessage(msgQueue.shift());
     }
@@ -689,7 +690,8 @@ function initGame() {
     for (var i in players) { players[i].update(delta); }
     for (var i in wavesClient) { wavesClient[i].update(delta); }
     render(delta);
-  }, delta);
+  };
+  setTimeout(loop, delta)
 }
 
 function render(delta) {

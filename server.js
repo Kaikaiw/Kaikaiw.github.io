@@ -7,10 +7,12 @@ function initGame() {
   E.prepID(MAX_ID);
   E.init();
   var delta = 1000 / SERVER_FRAME;
-  setInterval(function () {
-     E.serverUpdate(delta);
-     E.update(delta);
-  }, delta);
+  var loop = function () {
+    setTimeout(loop, delta);
+    E.serverUpdate(delta);
+    E.update(delta);
+  };
+  setTimeout(loop, delta);
 }
 
 function init() {
