@@ -302,7 +302,8 @@ class PlayerState extends EntityState {
         this.power = Math.min(this.maxPower, this.power + 1);
       break;
       case types.loot.bombs:
-        this.maxBombNumber = Math.min(this.maxMaxBombNumber, this.maxBombNumber + 1);
+        this.maxBombNumber = 
+            Math.min(this.maxMaxBombNumber, this.maxBombNumber + 1);
       break;
     }
   }
@@ -330,7 +331,8 @@ class PlayerState extends EntityState {
       return;
     }
     if ((toRowId != this.rowId || toColId != this.colId) &&
-        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId] || stoneMatrix[toRowId][toColId])) {
+        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId] ||
+        stoneMatrix[toRowId][toColId])) {
       if (!isServer) {
         return;
       }
@@ -445,7 +447,8 @@ class BombState extends EntityState {
   }
 
   blocked(rowId, colId) {
-    return bind(rowId, colId) && (boxMatrix[rowId][colId] || stoneMatrix[rowId][colId]);
+    return bind(rowId, colId) &&
+        (boxMatrix[rowId][colId] || stoneMatrix[rowId][colId]);
   }
 
   push(dir) {
@@ -453,7 +456,9 @@ class BombState extends EntityState {
     var checkRowId = this.rowId + check[dir][0];
     var checkColId = this.colId + check[dir][1];
 
-    if (!bind(checkRowId, checkColId) || bombMatrix[checkRowId][checkColId] || this.blocked(checkRowId, checkColId)) {
+    if (!bind(checkRowId, checkColId) ||
+        bombMatrix[checkRowId][checkColId] ||
+        this.blocked(checkRowId, checkColId)) {
       return;
     }
 
@@ -481,8 +486,9 @@ class BombState extends EntityState {
       }
     }
 
-    var directions = [ // [direction, start_i, start_j, end_i, end_j, step_i, step_j, dir_type]
-      [0, this.rowId + 1, this.colId, this.rowId + this.power, this.colId + this.power,  1,  0, types.dir.down],
+    // [direction, start_i, start_j, end_i, end_j, step_i, step_j, dir_type]
+    var directions = [
+      [0,this.rowId + 1, this.colId, this.rowId + this.power, this.colId + this.power,  1,  0, types.dir.down],
       [1, this.rowId - 1, this.colId, this.rowId - this.power, this.colId - this.power, -1,  0, types.dir.up],
       [0, this.rowId, this.colId + 1, this.rowId + this.power, this.colId + this.power,  0,  1, types.dir.right],
       [1, this.rowId, this.colId - 1, this.rowId - this.power, this.colId - this.power,  0, -1, types.dir.left],
@@ -492,7 +498,8 @@ class BombState extends EntityState {
       var d = directions[dir];
       var len = 0;
 
-      for (var i = d[1], j = d[2]; (d[0] ? i >= d[3] && j >= d[4] : i <= d[3] && j <= d[4]);) {
+      for (var i = d[1], j = d[2];
+          (d[0] ? i >= d[3] && j >= d[4] : i <= d[3] && j <= d[4]);) {
         if (!bind(i, j) || stoneMatrix[i][j]) {
           break;
         }
@@ -553,7 +560,8 @@ class BombState extends EntityState {
 
   // 放置炸弹时, 尝试链接其他炸弹, 达到链爆效果
   doChain() {
-    var directions = [ // [direction, start_i, start_j, end_i, end_j, step_i, step_j]
+    // [direction, start_i, start_j, end_i, end_j, step_i, step_j]
+    var directions = [
       [0, this.rowId + 1, this.colId, this.rowId + this.power, this.colId + this.power,  1,  0],
       [1, this.rowId - 1, this.colId, this.rowId - this.power, this.colId - this.power, -1,  0],
       [0, this.rowId, this.colId + 1, this.rowId + this.power, this.colId + this.power,  0,  1],
@@ -562,7 +570,8 @@ class BombState extends EntityState {
 
     for (var dir = 0; dir < directions.length; dir++) {
       var d = directions[dir];
-      for (var i = d[1], j = d[2]; (d[0] ? i >= d[3] && j >= d[4] : i <= d[3] && j <= d[4]);) {
+      for (var i = d[1], j = d[2];
+          (d[0] ? i >= d[3] && j >= d[4] : i <= d[3] && j <= d[4]);) {
         if (!bind(i, j) || this.blocked(i, j)) {
           break;
         }
@@ -604,7 +613,8 @@ class BombState extends EntityState {
 
     if (!bind(toRowId, toColId) ||
         ((toRowId != this.rowId || toColId != this.colId) &&
-        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId] || stoneMatrix[toRowId][toColId]))) {
+        (bombMatrix[toRowId][toColId] || boxMatrix[toRowId][toColId] ||
+        stoneMatrix[toRowId][toColId]))) {
       // re-chain, reset put time, remove from moving bomb, reset dir
       this.doChain();
       this.putTime = 0;
@@ -650,7 +660,8 @@ class WaveState extends EntityState {
       ];
 
       var d = directions[this.dir - 1];
-      for (var i = this.rowId, j = this.colId; (d[0] ? i > d[1] && j > d[2] : i < d[1] && j < d[2]);) {
+      for (var i = this.rowId, j = this.colId;
+          (d[0] ? i > d[1] && j > d[2] : i < d[1] && j < d[2]);) {
         waveMatrix[i][j] = 0;
         i += d[3];
         j += d[4];
@@ -975,8 +986,10 @@ function update(delta) {
   }
   for (var id in players) {
     var player = players[id];
-    var rowId = typeof player.state == 'undefined' ? player.rowId : player.state.rowId;
-    var colId = typeof player.state == 'undefined' ? player.colId : player.state.colId;
+    var rowId = 
+        typeof player.state == 'undefined' ? player.rowId : player.state.rowId;
+    var colId = 
+        typeof player.state == 'undefined' ? player.colId : player.state.colId;
     playerMatrix[rowId][colId][id] = 1;
   }
   for (var i in bombs) { bombs[i].update(delta); }
@@ -986,7 +999,8 @@ playerSpawns = [
   {spawn: true, where: [UNIT >> 1, UNIT * (MAX_ROW - 1) + (UNIT >> 1)]},
   {spawn: true, where: [UNIT >> 1, UNIT >> 1]},
   {spawn: true, where: [UNIT * (MAX_COL - 1) + (UNIT >> 1), UNIT >> 1]},
-  {spawn: true, where: [UNIT * (MAX_COL - 1) + (UNIT >> 1), UNIT * (MAX_ROW - 1) + (UNIT >> 1)]},
+  {spawn: true, where: 
+      [UNIT * (MAX_COL - 1) + (UNIT >> 1), UNIT * (MAX_ROW - 1) + (UNIT >> 1)]},
 ];
 spawnedPlayers = {};
 
@@ -1002,7 +1016,8 @@ function doSpawn(id) {
     spawnedPlayers[id] = i;
     spawn.spawn = false;
     numPlayers++;
-    clients[id].emit('opcode', {o: types.opcode.new_player, id: id, m: currentMap});
+    clients[id].emit(
+        'opcode', {o: types.opcode.new_player, id: id, m: currentMap});
     break;
   }
 }

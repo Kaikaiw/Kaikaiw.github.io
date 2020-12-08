@@ -99,7 +99,9 @@ class Sprite {
   }
 
   renderWith(delta, positionX, positionY, startX, startY) {
-    if (this.oneTime && this.currCycle + 1 == this.maxCycle && this.currStage + 1 == this.maxStage) {
+    if (this.oneTime &&
+        this.currCycle + 1 == this.maxCycle &&
+        this.currStage + 1 == this.maxStage) {
       return;
     }
     ctx.drawImage(
@@ -171,7 +173,8 @@ class Entity {
     }
 
     var renderTs = this.frameCtr++ - FRAME_RATE / SERVER_FRAME;
-    while (this.buffer.length() >= 2 && this.buffer.peekSecond().ts <= renderTs) {
+    while (this.buffer.length() >= 2 &&
+        this.buffer.peekSecond().ts <= renderTs) {
       this.buffer.shift();
     }
 
@@ -208,7 +211,6 @@ class Entity {
 class Block extends Entity {
   constructor(x, y) {
     super();
-    // 魔法数字...
     this.sprite =
         new Sprite(types.entity.block, UNIT, UNIT, UNIT, UNIT);
     this.sprite.cycleTime = -1;
@@ -223,7 +225,6 @@ var blockMatrix;
 class Stone extends Entity {
   constructor(x, y) {
     super();
-    // 魔法数字...
     this.sprite =
         new Sprite(types.entity.stone, 64, 79, UNIT, UNIT * 1.23);
     this.sprite.cycleTime = -1;
@@ -237,7 +238,6 @@ class Stone extends Entity {
 class Box extends Entity {
   constructor(id, x, y) {
     super();
-    // 魔法数字...
     this.state = new BoxState(id, x, y);
     this.sprite =
       new Sprite(types.entity.box, 64, 79, UNIT, UNIT * 1.23);
@@ -252,7 +252,6 @@ class Box extends Entity {
 class Loot extends Entity {
   constructor(id, x, y, type) {
     super();
-    // 魔法数字...
     this.state = new EntityState(id, x, y);
     this.sprite = new Sprite(
         types.entity.loot, 32, 48, UNIT, UNIT * 1.5);
@@ -269,7 +268,6 @@ class Player extends Entity {
   constructor(id, x, y, size, playerNum) {
     super();
     this.state = new PlayerState(id, x, y, size, playerNum);
-    // 魔法数字...
     this.sprite = new Sprite(playerNumToType[playerNum], 96, 118, 96, 118);
     this.sprite.maxCycle = 4;
     this.sprite.frameVector = [0,1,2,0,3];
@@ -280,7 +278,6 @@ class Player extends Entity {
 
   downPlayer() {
     this.state.downPlayer();
-    // 魔法数字...
     this.sprite = new Sprite(types.entity.player_downed, 75, 82, 96, 118);
     this.sprite.cycleTime = 200;
     this.sprite.maxCycle = 4;
@@ -288,7 +285,8 @@ class Player extends Entity {
 
   revivePlayer() {
     this.state.revivePlayer();
-    this.sprite = new Sprite(playerNumToType[this.state.playerNum], 96, 118, 96, 118);
+    this.sprite = 
+        new Sprite(playerNumToType[this.state.playerNum], 96, 118, 96, 118);
     this.sprite.frameVector = [0,1,2,0,3];
     this.sprite.cycleTime = 170; // ms
     this.sprite.maxCycle = 4;
@@ -347,7 +345,6 @@ playerNumToType = [
 class Bomb extends Entity {
   constructor(id, x, y) {
     super();
-    // 魔法数字...
     this.sprite = new Sprite(types.entity.bomb, 64, 64, 88, 88);
     this.sprite.cycleTime = 400;
     this.sprite.maxCycle = 3;
@@ -370,7 +367,6 @@ class Bomb extends Entity {
 class Wave extends Entity {
   constructor(id, rowId, colId, dir, len) {
     super();
-    // 魔法数字...
     this.state = new EntityState(id, 0, 0);
     this.id = id;
     this.rowId = rowId;
@@ -551,7 +547,8 @@ function handleMessage(msg) {
         var subState = intToPlayerState(remotePlayer.s);
         var id = remotePlayer.id;
         if (!(id in players)) { // 创建玩家
-          players[id] = new Player(id, subState.x, subState.y, UNIT, subState.playerNum);
+          players[id] = 
+              new Player(id, subState.x, subState.y, UNIT, subState.playerNum);
         }
 
         var player = players[id];
@@ -581,7 +578,8 @@ function handleMessage(msg) {
           }
         } else {
           player.state.dir = subState.dir;
-          player.buffer.push({'ts': player.frameCtr, 'x': subState.x, 'y': subState.y,});
+          player.buffer.push(
+              {'ts': player.frameCtr, 'x': subState.x, 'y': subState.y,});
         }
 
         player.state.score = subState.score;
@@ -612,7 +610,8 @@ function handleMessage(msg) {
           bombMatrix[b.state.rowId][b.state.colId] = 0;
           delete bombs[id];
 
-          var waveCenter = new Wave(waveNumber, b.state.rowId, b.state.colId, 0, 0);
+          var waveCenter = 
+              new Wave(waveNumber, b.state.rowId, b.state.colId, 0, 0);
           waveCenter.ttl = 20;
           waveCenter.sprites[0].cycleTime = 20;
           waveCenter.sprites[0].maxCycle = 3;
@@ -635,7 +634,11 @@ function handleMessage(msg) {
         if (!(id in bombs)) {
           bombs[id] = new Bomb(id, subState >> 10, subState & 0b1111111111);
         } else {
-          bombs[id].buffer.push({'ts': bombs[id].frameCtr, 'x': subState >> 10, 'y': subState & 0b1111111111});
+          bombs[id].buffer.push({
+              'ts': bombs[id].frameCtr,
+              'x': subState >> 10,
+              'y': subState & 0b1111111111
+          });
         }
       }
 
@@ -643,7 +646,12 @@ function handleMessage(msg) {
         var remoteWave = msg.w[i];
         var subState = intToWaveState(remoteWave.s);
         wavesClient[waveNumber] = new Wave(
-          waveNumber++, subState.rowId, subState.colId, subState.dir, subState.len);
+          waveNumber++,
+          subState.rowId,
+          subState.colId,
+          subState.dir,
+          subState.len
+        );
       }
     break;
   }
@@ -697,7 +705,8 @@ function initGame() {
 function render(delta) {
   for (var i = 0; i < MAX_ROW; i++) {
     for (var j = 0; j < MAX_COL; j++) {
-      block.renderWith(0, j * UNIT, i * UNIT, blockMatrix[i][j] * block.sprite.sizeX, 0);
+      block.renderWith(
+          0, j * UNIT, i * UNIT, blockMatrix[i][j] * block.sprite.sizeX, 0);
     }
   }
 
@@ -718,11 +727,13 @@ function render(delta) {
       }
       if (bombMatrix[i][j]) {
         var b = bombs[bombMatrix[i][j]];
-        bombs[bombMatrix[i][j]].render(0, b.state.x - (UNIT >> 1), b.state.y - (UNIT >> 1));
+        bombs[bombMatrix[i][j]].render(
+            0, b.state.x - (UNIT >> 1), b.state.y - (UNIT >> 1));
       }
       if (lootMatrix[i][j]) {
         renderY -= loot.sprite.sizeDrawY >> 1;
-        loot.renderWith(0, renderX, renderY, (lootMatrix[i][j] - 1) * loot.sprite.sizeX, 0);
+        loot.renderWith(
+            0, renderX, renderY, (lootMatrix[i][j] - 1) * loot.sprite.sizeX, 0);
       }
       for (var id in playerMatrix[i][j]) {
         playersToRender.push(id);
