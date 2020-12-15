@@ -4,7 +4,6 @@
   "description": "Game",
   "main": "server.js",
   "dependencies": {
-    "http-server": "",
     "socket.io": "3.0.0"
   },
   "scripts": {
